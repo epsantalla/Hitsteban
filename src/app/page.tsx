@@ -1,7 +1,7 @@
 "use client";
 
 import { useSession, signIn, signOut } from "next-auth/react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Game from "@/components/Game";
 import { Playfair_Display } from "next/font/google";
 
@@ -11,6 +11,22 @@ export default function Home() {
   const { data: session, status } = useSession();
   const [playlistId, setPlaylistId] = useState("");
   const [isGameStarted, setIsGameStarted] = useState(false);
+  const [userPlaylists, setUserPlaylists] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (session?.accessToken) {
+      fetch("https://api.spotify.com/v1/me/playlists?limit=50", {
+        headers: { Authorization: `Bearer ${session.accessToken}` }
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.items) {
+          setUserPlaylists(data.items.filter((p: any) => p !== null));
+        }
+      })
+      .catch(err => console.error("Error fetching playlists", err));
+    }
+  }, [session?.accessToken]);
 
   if (status === "loading") {
     return (
@@ -59,7 +75,7 @@ export default function Home() {
   };
 
   return (
-    <main className="flex h-[100dvh] overflow-hidden touch-none flex-col items-center justify-center p-6 bg-[#0a0a0a] text-foreground w-full">
+    <main className="flex h-[100dvh] overflow-hidden flex-col items-center justify-center p-6 bg-[#0a0a0a] text-foreground w-full">
       <div className="absolute top-4 right-4">
         <button 
           onClick={() => signOut()}
@@ -100,6 +116,44 @@ export default function Home() {
             Start Game
           </button>
         </form>
+
+        {userPlaylists.length > 0 && (
+          <div className="w-full mt-8">
+            <div className="flex items-center justify-center gap-4 mb-6 opacity-50">
+              <div className="h-px bg-white flex-1"></div>
+              <span className="text-xs tracking-widest uppercase font-bold text-white">Or select from library</span>
+              <div className="h-px bg-white flex-1"></div>
+            </div>
+            
+            {/* The Carousel */}
+            <div 
+              className="flex overflow-x-auto gap-4 pb-4 snap-x touch-pan-x [&::-webkit-scrollbar]:hidden"
+              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+            >
+              {userPlaylists.map(playlist => (
+                <button
+                  key={playlist.id}
+                  onClick={() => {
+                    setPlaylistId(playlist.id);
+                    setIsGameStarted(true);
+                  }}
+                  className="flex-shrink-0 w-28 flex flex-col items-center gap-3 snap-center group text-left transition-transform active:scale-95"
+                >
+                  <div className="w-28 h-28 rounded-md bg-gray-800 overflow-hidden shadow-lg border-2 border-transparent group-hover:border-[#BF953F] transition-colors relative">
+                    {playlist.images?.[0]?.url ? (
+                      <img src={playlist.images[0].url} alt={playlist.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-[#111] text-gray-600 text-xs uppercase font-bold tracking-widest">Mix</div>
+                    )}
+                  </div>
+                  <span className="text-xs text-gray-400 w-full truncate text-center group-hover:text-white transition-colors font-medium">
+                    {playlist.name}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </main>
   );

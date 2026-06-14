@@ -31,7 +31,9 @@ export default function Game({ playlistId, accessToken, onExit }: { playlistId: 
         let debugTotalItems = 0;
         let debugValidTracks = 0;
         let firstItemRaw = "";
-        let url = `https://api.spotify.com/v1/playlists/${playlistId}/items?limit=100&market=from_token`;
+        // We add additional_types=track to avoid 403s on playlists with podcast episodes, 
+        // and remove market=from_token which causes 403s if the user hasn't re-authenticated to grant the user-read-private scope.
+        let url = `https://api.spotify.com/v1/playlists/${playlistId}/items?limit=100&additional_types=track`;
         
         while (url) {
           const res = await fetch(url, {
