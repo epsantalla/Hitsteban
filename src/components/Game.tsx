@@ -41,8 +41,8 @@ export default function Game({ playlistId, accessToken, onExit }: { playlistId: 
           }
           const data = await res.json();
           const validTracks = data.items
-            .filter((item: any) => item.track && item.track.uri && item.track.type === 'track' && item.track.is_playable !== false && !item.is_local && !item.track.is_local)
-            .map((item: any) => item.track);
+            .map((item: any) => item.track || item.item)
+            .filter((t: any) => t && t.uri && t.type === 'track' && t.is_playable !== false && !t.is_local);
           
           debugTotalItems += (data.items || []).length;
           debugValidTracks += validTracks.length;
@@ -60,10 +60,6 @@ export default function Game({ playlistId, accessToken, onExit }: { playlistId: 
         }
         
         if (allTracks.length === 0) {
-          if (debugTotalItems > 0 && allTracks.length === 0) {
-            // Something was returned by API but filtered out. Let's show the raw JSON of the first item to debug.
-            throw new Error(`Playlist filtered to 0. ID: ${playlistId}. Raw first item: ${firstItemRaw}`);
-          }
           throw new Error(`Playlist is empty or contains unsupported tracks. ID: ${playlistId}, API Items: ${debugTotalItems}, Valid: ${debugValidTracks}`);
         }
         
