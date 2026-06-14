@@ -96,7 +96,8 @@ export default function Game({ playlistId, accessToken, onExit }: { playlistId: 
         const cleanBaseName = baseName.replace(/"/g, '');
         const cleanArtistName = artistName.replace(/"/g, '');
         
-        const query = encodeURIComponent(`track:"${cleanBaseName}" artist:"${cleanArtistName}"`);
+        // Use a broad search query to let Spotify's algorithm find the best matches
+        const query = encodeURIComponent(`${cleanBaseName} ${cleanArtistName}`);
         const res = await fetch(`https://api.spotify.com/v1/search?q=${query}&type=track&limit=50`, {
           headers: { Authorization: `Bearer ${accessToken}` }
         });
@@ -107,9 +108,21 @@ export default function Game({ playlistId, accessToken, onExit }: { playlistId: 
           let oldestYear = parseInt(fallbackYear);
           
           for (const item of items) {
-            const itemYear = parseInt(item.album.release_date.split('-')[0]);
-            if (!isNaN(itemYear) && itemYear < oldestYear) {
-              oldestYear = itemYear;
+            // Verify this result is actually the same song and artist
+            const isArtistMatch = item.artists.some((a: any) => 
+              a.name.toLowerCase().includes(cleanArtistName.toLowerCase()) || 
+              cleanArtistName.toLowerCase().includes(a.name.toLowerCase())
+            );
+            
+            const itemBaseName = item.name.split(' - ')[0].split(' (')[0].trim().toLowerCase();
+            const isTrackMatch = itemBaseName === cleanBaseName.toLowerCase() || 
+                                 item.name.toLowerCase().includes(cleanBaseName.toLowerCase());
+
+            if (isArtistMatch && isTrackMatch) {
+              const itemYear = parseInt(item.album.release_date.split('-')[0]);
+              if (!isNaN(itemYear) && itemYear < oldestYear) {
+                oldestYear = itemYear;
+              }
             }
           }
 
@@ -161,9 +174,9 @@ export default function Game({ playlistId, accessToken, onExit }: { playlistId: 
     };
   };
 
-  const playTrack = async (index: number, deviceId: string) => {
+  const playTrack = async (index: number, deviceId: string, retries = 3) => {
     try {
-      await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
+      const res = await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
         method: 'PUT',
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -171,11 +184,32 @@ export default function Game({ playlistId, accessToken, onExit }: { playlistId: 
         },
         body: JSON.stringify({ uris: [tracks[index].uri] }),
       });
-      setCurrentIndex(index);
-      setStatus('PLAYING');
+      
+      if (!res.ok && retries > 0) {
+        // Device might not be fully active on Spotify's backend yet, wait and retry
+        await new Promise(r => setTimeout(r, 500));
+        return playTrack(index, deviceId, retries - 1);
+      }
+      
+      if (!res.ok) {
+        console.error("Failed to play track, Spotify API returned:", res.status);
+      } else {
+        setCurrentIndex(index);
+        setStatus('PLAYING');
+      }
     } catch (err) {
-      console.error(err);
+      console.error("Network error playing track:", err);
     }
+  };
+
+  const handleExit = () => {
+    if (playerRef.current) {
+      // Pause before disconnecting to avoid zombie playback
+      playerRef.current.pause().catch(() => {}).finally(() => {
+        playerRef.current.disconnect();
+      });
+    }
+    onExit();
   };
 
   const [isHolding, setIsHolding] = useState(false);
@@ -201,7 +235,7 @@ export default function Game({ playlistId, accessToken, onExit }: { playlistId: 
             await playTrack(nextIndex, deviceIdRef.current);
           }
         } else {
-          onExit();
+          handleExit();
         }
       }
     }, 600);
@@ -218,7 +252,9 @@ export default function Game({ playlistId, accessToken, onExit }: { playlistId: 
   useEffect(() => {
     return () => {
       if (playerRef.current) {
-        playerRef.current.disconnect();
+        playerRef.current.pause().catch(() => {}).finally(() => {
+          playerRef.current.disconnect();
+        });
       }
       if (holdTimerRef.current) {
         clearTimeout(holdTimerRef.current);
@@ -230,7 +266,7 @@ export default function Game({ playlistId, accessToken, onExit }: { playlistId: 
     return (
       <div className="flex flex-col items-center justify-center min-h-screen p-6 text-center bg-[#0a0a0a] text-foreground">
         <p className="text-red-500 mb-4">{errorMsg}</p>
-        <button onClick={onExit} className="px-6 py-2 bg-gray-800 rounded-full text-white">Go Back</button>
+        <button onClick={handleExit} className="px-6 py-2 bg-gray-800 rounded-full text-white">Go Back</button>
       </div>
     );
   }
@@ -291,7 +327,7 @@ export default function Game({ playlistId, accessToken, onExit }: { playlistId: 
 
         <div className="absolute top-4 right-4 z-10 mt-2">
           <button 
-            onClick={(e) => { e.stopPropagation(); onExit(); }}
+            onClick={(e) => { e.stopPropagation(); handleExit(); }}
             className="text-xs px-3 py-1 border border-gray-700 rounded text-gray-400 hover:bg-gray-800 transition"
           >
             End Game
@@ -306,8 +342,16 @@ export default function Game({ playlistId, accessToken, onExit }: { playlistId: 
                 <div className="absolute inset-6 rounded-full border border-gray-800/50"></div>
                 <div className="absolute inset-10 rounded-full border border-gray-800/50"></div>
                 <div className="absolute inset-14 rounded-full border border-gray-800/50"></div>
-                <div className="w-16 h-16 rounded-full bg-[#D4AF37] flex items-center justify-center border-2 border-black z-10">
-                  <div className="w-3 h-3 rounded-full bg-[#0a0a0a]"></div>
+                
+                {/* Center Label */}
+                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#BF953F] via-[#FCF6BA] to-[#B38728] flex items-center justify-center border-2 border-black z-10 relative overflow-hidden">
+                  {/* Decorative lines so the spin is visually obvious */}
+                  <div className="absolute top-2 w-8 h-[2px] bg-black/40 rounded-full"></div>
+                  <div className="absolute bottom-3 w-6 h-[2px] bg-black/40 rounded-full"></div>
+                  <div className="absolute bottom-2 w-4 h-[2px] bg-black/40 rounded-full ml-2"></div>
+                  
+                  {/* Spindle hole */}
+                  <div className="w-3 h-3 rounded-full bg-[#0a0a0a] border border-black/50 z-20 shadow-inner"></div>
                 </div>
               </div>
               <h2 className="text-2xl font-light text-[#D4AF37] tracking-widest uppercase opacity-80">
@@ -324,7 +368,7 @@ export default function Game({ playlistId, accessToken, onExit }: { playlistId: 
                 <p className="text-xl md:text-2xl font-light text-[#D4AF37]">
                   {currentTrack.artists.map(a => a.name).join(', ')}
                 </p>
-                <p className="text-xl md:text-2xl font-light text-[#D4AF37]">
+                <p className="text-xl md:text-2xl font-light text-white">
                   {originalYear}
                 </p>
               </div>
