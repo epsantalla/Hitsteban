@@ -27,6 +27,7 @@ export default function Game({ playlistId, accessToken, onExit }: { playlistId: 
         let allTracks: Track[] = [];
         let debugTotalItems = 0;
         let debugValidTracks = 0;
+        let firstItemRaw = "";
         let url = `https://api.spotify.com/v1/playlists/${playlistId}/items?limit=100&market=from_token`;
         
         while (url) {
@@ -45,6 +46,9 @@ export default function Game({ playlistId, accessToken, onExit }: { playlistId: 
           
           debugTotalItems += (data.items || []).length;
           debugValidTracks += validTracks.length;
+          if (!firstItemRaw && data.items && data.items.length > 0) {
+            firstItemRaw = JSON.stringify(data.items[0]);
+          }
           
           allTracks = [...allTracks, ...validTracks];
           url = data.next;
@@ -58,7 +62,7 @@ export default function Game({ playlistId, accessToken, onExit }: { playlistId: 
         if (allTracks.length === 0) {
           if (debugTotalItems > 0 && allTracks.length === 0) {
             // Something was returned by API but filtered out. Let's show the raw JSON of the first item to debug.
-            throw new Error(`Playlist filtered to 0. ID: ${playlistId}. Raw first item: ${JSON.stringify(data.items[0])}`);
+            throw new Error(`Playlist filtered to 0. ID: ${playlistId}. Raw first item: ${firstItemRaw}`);
           }
           throw new Error(`Playlist is empty or contains unsupported tracks. ID: ${playlistId}, API Items: ${debugTotalItems}, Valid: ${debugValidTracks}`);
         }
