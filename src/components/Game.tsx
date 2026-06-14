@@ -96,19 +96,24 @@ export default function Game({ playlistId, accessToken, onExit }: { playlistId: 
         const cleanBaseName = baseName.replace(/"/g, '');
         const cleanArtistName = artistName.replace(/"/g, '');
         
-        // Use a broad search query to let Spotify's algorithm find the best matches
+        // Use a broad search query to let both algorithms find the best matches
         const query = encodeURIComponent(`${cleanBaseName} ${cleanArtistName}`);
-        const res = await fetch(`https://api.spotify.com/v1/search?q=${query}&type=track&limit=50`, {
-          headers: { Authorization: `Bearer ${accessToken}` }
-        });
+        
+        const [spotifyRes, itunesRes] = await Promise.allSettled([
+          fetch(`https://api.spotify.com/v1/search?q=${query}&type=track&limit=50`, {
+            headers: { Authorization: `Bearer ${accessToken}` }
+          }),
+          fetch(`https://itunes.apple.com/search?term=${query}&entity=song&limit=15`)
+        ]);
 
-        if (res.ok) {
-          const data = await res.json();
+        let oldestYear = parseInt(fallbackYear);
+
+        // Process Spotify Results
+        if (spotifyRes.status === 'fulfilled' && spotifyRes.value.ok) {
+          const data = await spotifyRes.value.json();
           const items = data.tracks?.items || [];
-          let oldestYear = parseInt(fallbackYear);
           
           for (const item of items) {
-            // Verify this result is actually the same song and artist
             const isArtistMatch = item.artists.some((a: any) => 
               a.name.toLowerCase().includes(cleanArtistName.toLowerCase()) || 
               cleanArtistName.toLowerCase().includes(a.name.toLowerCase())
@@ -125,10 +130,32 @@ export default function Game({ playlistId, accessToken, onExit }: { playlistId: 
               }
             }
           }
+        }
 
-          if (isMounted) {
-            setOriginalYear(oldestYear.toString());
+        // Process iTunes Results as a fallback/secondary source
+        if (itunesRes.status === 'fulfilled' && itunesRes.value.ok) {
+          const data = await itunesRes.value.json();
+          const results = data.results || [];
+          
+          for (const item of results) {
+            const isArtistMatch = item.artistName.toLowerCase().includes(cleanArtistName.toLowerCase()) || 
+                                  cleanArtistName.toLowerCase().includes(item.artistName.toLowerCase());
+                                  
+            const itemBaseName = item.trackName.split(' - ')[0].split(' (')[0].trim().toLowerCase();
+            const isTrackMatch = itemBaseName === cleanBaseName.toLowerCase() || 
+                                 item.trackName.toLowerCase().includes(cleanBaseName.toLowerCase());
+
+            if (isArtistMatch && isTrackMatch && item.releaseDate) {
+              const itemYear = parseInt(item.releaseDate.substring(0, 4));
+              if (!isNaN(itemYear) && itemYear < oldestYear) {
+                oldestYear = itemYear;
+              }
+            }
           }
+        }
+
+        if (isMounted) {
+          setOriginalYear(oldestYear.toString());
         }
       } catch (err) {
         console.error("Failed to fetch original year:", err);
@@ -337,12 +364,19 @@ export default function Game({ playlistId, accessToken, onExit }: { playlistId: 
         <div className="flex flex-col items-center justify-center w-full max-w-md px-6 text-center transition-opacity duration-300 pointer-events-none">
           {revealState === 'HIDDEN' ? (
             <div className={`flex flex-col items-center transition-transform duration-500 ${isHolding ? 'scale-110' : 'scale-100'}`}>
-              <div className={`relative w-48 h-48 rounded-full bg-[#111] border-[6px] border-[#222] shadow-xl shadow-black/80 flex items-center justify-center mb-8 animate-[spin_3s_linear_infinite] transition-all duration-300 ${isHolding ? 'ring-4 ring-[#D4AF37]/50 border-[#333]' : ''}`}>
-                <div className="absolute inset-2 rounded-full border border-gray-800/50"></div>
-                <div className="absolute inset-6 rounded-full border border-gray-800/50"></div>
-                <div className="absolute inset-10 rounded-full border border-gray-800/50"></div>
-                <div className="absolute inset-14 rounded-full border border-gray-800/50"></div>
-                
+              <div className={`relative w-48 h-48 rounded-full bg-[#1e1e1e] border-[6px] border-[#2c2c2c] shadow-xl shadow-black/80 flex items-center justify-center mb-8 animate-[spin_3s_linear_infinite] transition-all duration-300 ${isHolding ? 'ring-4 ring-[#D4AF37]/50 border-[#444]' : ''}`}>
+                {/* Grooves */}
+                <div className="absolute inset-2 rounded-full border border-gray-500/30"></div>
+                <div className="absolute inset-6 rounded-full border border-gray-500/20"></div>
+                <div className="absolute inset-10 rounded-full border border-gray-500/30"></div>
+                <div className="absolute inset-14 rounded-full border border-gray-500/20"></div>
+
+                {/* Imperfections / Scratches */}
+                <div className="absolute top-10 left-10 w-16 h-[1px] bg-white/10 rotate-45 rounded-full"></div>
+                <div className="absolute bottom-12 right-8 w-10 h-[1px] bg-white/10 -rotate-12 rounded-full"></div>
+                <div className="absolute top-24 left-4 w-6 h-[1px] bg-white/10 rotate-75 rounded-full"></div>
+                <div className="absolute top-12 right-16 w-3 h-[2px] bg-white/20 rounded-full"></div>
+
                 {/* Center Label */}
                 <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#BF953F] via-[#FCF6BA] to-[#B38728] flex items-center justify-center border-2 border-black z-10 relative overflow-hidden">
                   {/* Decorative lines so the spin is visually obvious */}
