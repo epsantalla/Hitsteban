@@ -41,14 +41,12 @@ export default function Home() {
 
     let finalId = playlistId.trim();
     
-    // Automatically extract the ID if the user pastes a full URL
-    if (finalId.includes('spotify.com/playlist/')) {
-      const parts = finalId.split('spotify.com/playlist/');
-      if (parts.length > 1) {
-        finalId = parts[1].split('?')[0];
-      }
-    } else if (finalId.includes('spotify:playlist:')) {
-      finalId = finalId.split('spotify:playlist:')[1];
+    // Automatically extract the ID using a regex to handle various formats (including localized URLs)
+    const match = finalId.match(/(?:playlist\/|playlist:)([a-zA-Z0-9]+)/);
+    if (match && match[1]) {
+      finalId = match[1];
+    } else {
+      finalId = finalId.split('?')[0];
     }
 
     setPlaylistId(finalId);

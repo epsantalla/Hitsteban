@@ -39,7 +39,7 @@ export default function Game({ playlistId, accessToken, onExit }: { playlistId: 
           const data = await res.json();
           const validTracks = data.items
             .map((item: any) => item.track)
-            .filter((t: any) => t && t.uri);
+            .filter((t: any) => t && t.uri && t.type === 'track' && t.is_playable !== false && t.is_local === false);
           allTracks = [...allTracks, ...validTracks];
           url = data.next;
         }
@@ -49,7 +49,7 @@ export default function Game({ playlistId, accessToken, onExit }: { playlistId: 
           [allTracks[i], allTracks[j]] = [allTracks[j], allTracks[i]];
         }
         
-        if (allTracks.length === 0) throw new Error("Playlist is empty");
+        if (allTracks.length === 0) throw new Error("Playlist is empty or contains unsupported tracks (e.g., podcasts, local files, or region-locked tracks).");
         
         setTracks(allTracks);
         setStatus('READY_TO_START');
