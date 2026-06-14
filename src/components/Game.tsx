@@ -55,7 +55,13 @@ export default function Game({ playlistId, accessToken, onExit }: { playlistId: 
           [allTracks[i], allTracks[j]] = [allTracks[j], allTracks[i]];
         }
         
-        if (allTracks.length === 0) throw new Error(`Playlist is empty or contains unsupported tracks. ID: ${playlistId}, API Items: ${debugTotalItems}, Valid: ${debugValidTracks}`);
+        if (allTracks.length === 0) {
+          if (debugTotalItems > 0 && allTracks.length === 0) {
+            // Something was returned by API but filtered out. Let's show the raw JSON of the first item to debug.
+            throw new Error(`Playlist filtered to 0. ID: ${playlistId}. Raw first item: ${JSON.stringify(data.items[0])}`);
+          }
+          throw new Error(`Playlist is empty or contains unsupported tracks. ID: ${playlistId}, API Items: ${debugTotalItems}, Valid: ${debugValidTracks}`);
+        }
         
         setTracks(allTracks);
         setStatus('READY_TO_START');
