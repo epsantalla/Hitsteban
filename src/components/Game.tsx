@@ -25,7 +25,7 @@ export default function Game({ playlistId, accessToken, onExit }: { playlistId: 
     const loadTracks = async () => {
       try {
         let allTracks: Track[] = [];
-        let url = `https://api.spotify.com/v1/playlists/${playlistId}/tracks?limit=100`;
+        let url = `https://api.spotify.com/v1/playlists/${playlistId}/items?limit=100&additional_types=track`;
         
         while (url) {
           const res = await fetch(url, {
