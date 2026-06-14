@@ -31,7 +31,11 @@ export default function Game({ playlistId, accessToken, onExit }: { playlistId: 
           const res = await fetch(url, {
             headers: { Authorization: `Bearer ${accessToken}` }
           });
-          if (!res.ok) throw new Error("Failed to fetch playlist tracks. Make sure the ID is correct and you have access.");
+          if (!res.ok) {
+            const errorData = await res.json().catch(() => ({}));
+            const spotifyError = errorData.error?.message || res.statusText;
+            throw new Error(`Spotify API Error: ${spotifyError}`);
+          }
           const data = await res.json();
           const validTracks = data.items
             .map((item: any) => item.track)

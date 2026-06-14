@@ -38,6 +38,20 @@ export default function Home() {
   const handleStart = (e: React.FormEvent) => {
     e.preventDefault();
     if (!playlistId.trim()) return;
+
+    let finalId = playlistId.trim();
+    
+    // Automatically extract the ID if the user pastes a full URL
+    if (finalId.includes('spotify.com/playlist/')) {
+      const parts = finalId.split('spotify.com/playlist/');
+      if (parts.length > 1) {
+        finalId = parts[1].split('?')[0];
+      }
+    } else if (finalId.includes('spotify:playlist:')) {
+      finalId = finalId.split('spotify:playlist:')[1];
+    }
+
+    setPlaylistId(finalId);
     setIsGameStarted(true);
   };
 
