@@ -182,7 +182,61 @@ export default function Game({ playlistId, accessToken, onExit }: { playlistId: 
   }
 
   const currentTrack = tracks[currentIndex];
-  const releaseYear = currentTrack.album.release_date.split('-')[0];
+  
+  // State for the true release year, to fix remaster/re-release dates
+  const [originalYear, setOriginalYear] = useState<string>('');
+
+  useEffect(() => {
+    if (tracks.length === 0 || !tracks[currentIndex]) return;
+    
+    let isMounted = true;
+    const fetchYear = async () => {
+      const track = tracks[currentIndex];
+      const fallbackYear = track.album.release_date.split('-')[0];
+      
+      // Set to fallback immediately so there's never an empty year
+      setOriginalYear(fallbackYear);
+
+      try {
+        // Remove " - Remastered", " (feat. ...)", etc. to get the core song name
+        const baseName = track.name.split(' - ')[0].split(' (')[0].trim();
+        const artistName = track.artists[0].name;
+        
+        const cleanBaseName = baseName.replace(/"/g, '');
+        const cleanArtistName = artistName.replace(/"/g, '');
+        
+        const query = encodeURIComponent(`track:"${cleanBaseName}" artist:"${cleanArtistName}"`);
+        const res = await fetch(`https://api.spotify.com/v1/search?q=${query}&type=track&limit=50`, {
+          headers: { Authorization: `Bearer ${accessToken}` }
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          const items = data.tracks?.items || [];
+          let oldestYear = parseInt(fallbackYear);
+          
+          for (const item of items) {
+            const itemYear = parseInt(item.album.release_date.split('-')[0]);
+            if (!isNaN(itemYear) && itemYear < oldestYear) {
+              oldestYear = itemYear;
+            }
+          }
+
+          if (isMounted) {
+            setOriginalYear(oldestYear.toString());
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch original year:", err);
+      }
+    };
+
+    fetchYear();
+    
+    return () => {
+      isMounted = false;
+    };
+  }, [currentIndex, tracks, accessToken]);
 
   return (
     <div 
@@ -221,7 +275,7 @@ export default function Game({ playlistId, accessToken, onExit }: { playlistId: 
               {currentTrack.artists.map(a => a.name).join(', ')}
             </p>
             <p className="text-lg text-gray-500 font-mono bg-gray-900 px-4 py-1 rounded-full">
-              {releaseYear}
+              {originalYear}
             </p>
             <p className="mt-12 text-sm text-gray-600 uppercase tracking-widest">
               Tap again for next track
