@@ -96,6 +96,11 @@ export default function Game({ playlistId, accessToken, onExit }: { playlistId: 
         const cleanBaseName = baseName.replace(/"/g, '');
         const cleanArtistName = artistName.replace(/"/g, '');
         
+        // Helper to ignore punctuation (like "Salta!!!" vs "Salta") and support accents
+        const normalize = (str: string) => str.toLowerCase().replace(/[^\w\s\u00C0-\u017F]/g, '').trim();
+        const normTargetTrack = normalize(cleanBaseName);
+        const normTargetArtist = normalize(cleanArtistName);
+        
         // Use a broad search query to let both algorithms find the best matches
         const query = encodeURIComponent(`${cleanBaseName} ${cleanArtistName}`);
         
@@ -114,14 +119,16 @@ export default function Game({ playlistId, accessToken, onExit }: { playlistId: 
           const items = data.tracks?.items || [];
           
           for (const item of items) {
-            const isArtistMatch = item.artists.some((a: any) => 
-              a.name.toLowerCase().includes(cleanArtistName.toLowerCase()) || 
-              cleanArtistName.toLowerCase().includes(a.name.toLowerCase())
-            );
+            const isArtistMatch = item.artists.some((a: any) => {
+              const normA = normalize(a.name);
+              return normA.includes(normTargetArtist) || normTargetArtist.includes(normA);
+            });
             
-            const itemBaseName = item.name.split(' - ')[0].split(' (')[0].trim().toLowerCase();
-            const isTrackMatch = itemBaseName === cleanBaseName.toLowerCase() || 
-                                 item.name.toLowerCase().includes(cleanBaseName.toLowerCase());
+            const itemBaseName = item.name.split(' - ')[0].split(' (')[0];
+            const normItemTrack = normalize(itemBaseName);
+            const isTrackMatch = normItemTrack === normTargetTrack || 
+                                 normalize(item.name).includes(normTargetTrack) ||
+                                 normTargetTrack.includes(normItemTrack);
 
             if (isArtistMatch && isTrackMatch) {
               const itemYear = parseInt(item.album.release_date.split('-')[0]);
@@ -138,12 +145,15 @@ export default function Game({ playlistId, accessToken, onExit }: { playlistId: 
           const results = data.results || [];
           
           for (const item of results) {
-            const isArtistMatch = item.artistName.toLowerCase().includes(cleanArtistName.toLowerCase()) || 
-                                  cleanArtistName.toLowerCase().includes(item.artistName.toLowerCase());
+            const normItemArtist = normalize(item.artistName);
+            const isArtistMatch = normItemArtist.includes(normTargetArtist) || 
+                                  normTargetArtist.includes(normItemArtist);
                                   
-            const itemBaseName = item.trackName.split(' - ')[0].split(' (')[0].trim().toLowerCase();
-            const isTrackMatch = itemBaseName === cleanBaseName.toLowerCase() || 
-                                 item.trackName.toLowerCase().includes(cleanBaseName.toLowerCase());
+            const itemBaseName = item.trackName.split(' - ')[0].split(' (')[0];
+            const normItemTrack = normalize(itemBaseName);
+            const isTrackMatch = normItemTrack === normTargetTrack || 
+                                 normalize(item.trackName).includes(normTargetTrack) ||
+                                 normTargetTrack.includes(normItemTrack);
 
             if (isArtistMatch && isTrackMatch && item.releaseDate) {
               const itemYear = parseInt(item.releaseDate.substring(0, 4));
@@ -393,11 +403,11 @@ export default function Game({ playlistId, accessToken, onExit }: { playlistId: 
                 {currentTrack.name}
               </h2>
               
-              <div className="flex flex-col items-center space-y-2 mb-8">
-                <p className="text-xl md:text-2xl font-light text-[#D4AF37]">
+              <div className="flex flex-col items-center space-y-3 mb-16">
+                <p className="text-2xl md:text-3xl font-light text-[#D4AF37]">
                   {currentTrack.artists.map(a => a.name).join(', ')}
                 </p>
-                <p className="text-xl md:text-2xl font-light text-white">
+                <p className="text-2xl md:text-3xl font-light text-white">
                   {originalYear}
                 </p>
               </div>

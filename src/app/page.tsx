@@ -14,7 +14,7 @@ export default function Home() {
 
   if (status === "loading") {
     return (
-      <main className="flex min-h-screen flex-col items-center justify-center bg-[#0a0a0a] text-foreground">
+      <main className="flex h-[100dvh] overflow-hidden touch-none flex-col items-center justify-center bg-[#0a0a0a] text-foreground">
         <p className="text-xl text-[#BF953F] animate-pulse">Loading...</p>
       </main>
     );
@@ -22,7 +22,7 @@ export default function Home() {
 
   if (!session) {
     return (
-      <main className="flex min-h-screen flex-col items-center justify-center p-6 bg-[#0a0a0a] text-foreground">
+      <main className="flex h-[100dvh] overflow-hidden touch-none flex-col items-center justify-center p-6 bg-[#0a0a0a] text-foreground">
         <h1 className={`${playfair.className} text-6xl font-black mb-12 text-center bg-clip-text text-transparent bg-gradient-to-r from-[#BF953F] via-[#FCF6BA] to-[#B38728] drop-shadow-sm`}>
           Hitsteban
         </h1>
@@ -59,7 +59,7 @@ export default function Home() {
   };
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-6 bg-[#0a0a0a] text-foreground w-full">
+    <main className="flex h-[100dvh] overflow-hidden touch-none flex-col items-center justify-center p-6 bg-[#0a0a0a] text-foreground w-full">
       <div className="absolute top-4 right-4">
         <button 
           onClick={() => signOut()}
