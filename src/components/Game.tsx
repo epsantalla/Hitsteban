@@ -25,6 +25,8 @@ export default function Game({ playlistId, accessToken, onExit }: { playlistId: 
     const loadTracks = async () => {
       try {
         let allTracks: Track[] = [];
+        let debugTotalItems = 0;
+        let debugValidTracks = 0;
         let url = `https://api.spotify.com/v1/playlists/${playlistId}/items?limit=100&market=from_token`;
         
         while (url) {
@@ -38,8 +40,12 @@ export default function Game({ playlistId, accessToken, onExit }: { playlistId: 
           }
           const data = await res.json();
           const validTracks = data.items
-            .map((item: any) => item.track)
-            .filter((t: any) => t && t.uri && t.type === 'track' && t.is_playable !== false && t.is_local === false);
+            .filter((item: any) => item.track && item.track.uri && item.track.type === 'track' && item.track.is_playable !== false && !item.is_local && !item.track.is_local)
+            .map((item: any) => item.track);
+          
+          debugTotalItems += (data.items || []).length;
+          debugValidTracks += validTracks.length;
+          
           allTracks = [...allTracks, ...validTracks];
           url = data.next;
         }
@@ -49,7 +55,7 @@ export default function Game({ playlistId, accessToken, onExit }: { playlistId: 
           [allTracks[i], allTracks[j]] = [allTracks[j], allTracks[i]];
         }
         
-        if (allTracks.length === 0) throw new Error("Playlist is empty or contains unsupported tracks (e.g., podcasts, local files, or region-locked tracks).");
+        if (allTracks.length === 0) throw new Error(`Playlist is empty or contains unsupported tracks. ID: ${playlistId}, API Items: ${debugTotalItems}, Valid: ${debugValidTracks}`);
         
         setTracks(allTracks);
         setStatus('READY_TO_START');
