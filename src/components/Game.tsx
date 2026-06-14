@@ -18,6 +18,9 @@ export default function Game({ playlistId, accessToken, onExit }: { playlistId: 
   const [errorMsg, setErrorMsg] = useState("");
   const [revealState, setRevealState] = useState<'HIDDEN' | 'REVEALED'>('HIDDEN');
   
+  // State for the true release year, to fix remaster/re-release dates
+  const [originalYear, setOriginalYear] = useState<string>('');
+
   const deviceIdRef = useRef<string | null>(null);
   const playerRef = useRef<any>(null);
 
@@ -73,6 +76,58 @@ export default function Game({ playlistId, accessToken, onExit }: { playlistId: 
 
     loadTracks();
   }, [playlistId, accessToken]);
+
+  useEffect(() => {
+    if (tracks.length === 0 || !tracks[currentIndex]) return;
+    
+    let isMounted = true;
+    const fetchYear = async () => {
+      const track = tracks[currentIndex];
+      const fallbackYear = track.album.release_date.split('-')[0];
+      
+      // Set to fallback immediately so there's never an empty year
+      setOriginalYear(fallbackYear);
+
+      try {
+        // Remove " - Remastered", " (feat. ...)", etc. to get the core song name
+        const baseName = track.name.split(' - ')[0].split(' (')[0].trim();
+        const artistName = track.artists[0].name;
+        
+        const cleanBaseName = baseName.replace(/"/g, '');
+        const cleanArtistName = artistName.replace(/"/g, '');
+        
+        const query = encodeURIComponent(`track:"${cleanBaseName}" artist:"${cleanArtistName}"`);
+        const res = await fetch(`https://api.spotify.com/v1/search?q=${query}&type=track&limit=50`, {
+          headers: { Authorization: `Bearer ${accessToken}` }
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          const items = data.tracks?.items || [];
+          let oldestYear = parseInt(fallbackYear);
+          
+          for (const item of items) {
+            const itemYear = parseInt(item.album.release_date.split('-')[0]);
+            if (!isNaN(itemYear) && itemYear < oldestYear) {
+              oldestYear = itemYear;
+            }
+          }
+
+          if (isMounted) {
+            setOriginalYear(oldestYear.toString());
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch original year:", err);
+      }
+    };
+
+    fetchYear();
+    
+    return () => {
+      isMounted = false;
+    };
+  }, [currentIndex, tracks, accessToken]);
 
   const initPlayerAndStart = () => {
     setStatus('INITIALIZING_SDK');
@@ -205,61 +260,6 @@ export default function Game({ playlistId, accessToken, onExit }: { playlistId: 
   }
 
   const currentTrack = tracks[currentIndex];
-  
-  // State for the true release year, to fix remaster/re-release dates
-  const [originalYear, setOriginalYear] = useState<string>('');
-
-  useEffect(() => {
-    if (tracks.length === 0 || !tracks[currentIndex]) return;
-    
-    let isMounted = true;
-    const fetchYear = async () => {
-      const track = tracks[currentIndex];
-      const fallbackYear = track.album.release_date.split('-')[0];
-      
-      // Set to fallback immediately so there's never an empty year
-      setOriginalYear(fallbackYear);
-
-      try {
-        // Remove " - Remastered", " (feat. ...)", etc. to get the core song name
-        const baseName = track.name.split(' - ')[0].split(' (')[0].trim();
-        const artistName = track.artists[0].name;
-        
-        const cleanBaseName = baseName.replace(/"/g, '');
-        const cleanArtistName = artistName.replace(/"/g, '');
-        
-        const query = encodeURIComponent(`track:"${cleanBaseName}" artist:"${cleanArtistName}"`);
-        const res = await fetch(`https://api.spotify.com/v1/search?q=${query}&type=track&limit=50`, {
-          headers: { Authorization: `Bearer ${accessToken}` }
-        });
-
-        if (res.ok) {
-          const data = await res.json();
-          const items = data.tracks?.items || [];
-          let oldestYear = parseInt(fallbackYear);
-          
-          for (const item of items) {
-            const itemYear = parseInt(item.album.release_date.split('-')[0]);
-            if (!isNaN(itemYear) && itemYear < oldestYear) {
-              oldestYear = itemYear;
-            }
-          }
-
-          if (isMounted) {
-            setOriginalYear(oldestYear.toString());
-          }
-        }
-      } catch (err) {
-        console.error("Failed to fetch original year:", err);
-      }
-    };
-
-    fetchYear();
-    
-    return () => {
-      isMounted = false;
-    };
-  }, [currentIndex, tracks, accessToken]);
 
   return (
     <>
@@ -320,10 +320,13 @@ export default function Game({ playlistId, accessToken, onExit }: { playlistId: 
                 {currentTrack.name}
               </h2>
               
-              <div className="flex items-center justify-center space-x-3 text-xl md:text-2xl font-light text-[#D4AF37] mb-8">
-                <span>{currentTrack.artists.map(a => a.name).join(', ')}</span>
-                <span className="text-gray-600">|</span>
-                <span className="font-mono text-white bg-gray-900/50 px-3 py-1 rounded">{originalYear}</span>
+              <div className="flex flex-col items-center space-y-2 mb-8">
+                <p className="text-xl md:text-2xl font-light text-[#D4AF37]">
+                  {currentTrack.artists.map(a => a.name).join(', ')}
+                </p>
+                <p className="text-xl md:text-2xl font-light text-[#D4AF37]">
+                  {originalYear}
+                </p>
               </div>
 
               <div className="flex items-end justify-center space-x-1.5 h-16 mb-12">
