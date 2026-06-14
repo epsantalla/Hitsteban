@@ -123,21 +123,41 @@ export default function Game({ playlistId, accessToken, onExit }: { playlistId: 
     }
   };
 
-  const handlePointerDown = async (e: React.PointerEvent) => {
+  const [isHolding, setIsHolding] = useState(false);
+  const holdTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handlePointerDown = (e: React.PointerEvent) => {
     e.preventDefault();
-    if (revealState === 'HIDDEN') {
-      setRevealState('REVEALED');
-    } else {
-      const nextIndex = currentIndex + 1;
-      if (nextIndex < tracks.length) {
-        setRevealState('HIDDEN');
-        if (deviceIdRef.current) {
-          await playTrack(nextIndex, deviceIdRef.current);
-        }
+    if (holdTimerRef.current) return;
+    
+    setIsHolding(true);
+    
+    holdTimerRef.current = setTimeout(async () => {
+      holdTimerRef.current = null;
+      setIsHolding(false);
+      
+      if (revealState === 'HIDDEN') {
+        setRevealState('REVEALED');
       } else {
-        onExit();
+        const nextIndex = currentIndex + 1;
+        if (nextIndex < tracks.length) {
+          setRevealState('HIDDEN');
+          if (deviceIdRef.current) {
+            await playTrack(nextIndex, deviceIdRef.current);
+          }
+        } else {
+          onExit();
+        }
       }
+    }, 600);
+  };
+
+  const handlePointerUpOrLeave = () => {
+    if (holdTimerRef.current) {
+      clearTimeout(holdTimerRef.current);
+      holdTimerRef.current = null;
     }
+    setIsHolding(false);
   };
 
   useEffect(() => {
@@ -145,12 +165,15 @@ export default function Game({ playlistId, accessToken, onExit }: { playlistId: 
       if (playerRef.current) {
         playerRef.current.disconnect();
       }
+      if (holdTimerRef.current) {
+        clearTimeout(holdTimerRef.current);
+      }
     };
   }, []);
 
   if (status === 'ERROR') {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen p-6 text-center bg-background text-foreground">
+      <div className="flex flex-col items-center justify-center min-h-screen p-6 text-center bg-[#0a0a0a] text-foreground">
         <p className="text-red-500 mb-4">{errorMsg}</p>
         <button onClick={onExit} className="px-6 py-2 bg-gray-800 rounded-full text-white">Go Back</button>
       </div>
@@ -159,20 +182,20 @@ export default function Game({ playlistId, accessToken, onExit }: { playlistId: 
 
   if (status === 'FETCHING' || status === 'INITIALIZING_SDK') {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen text-gray-400 bg-background text-foreground">
-        <Loader2 className="w-12 h-12 animate-spin mb-4" />
-        <p>{status === 'FETCHING' ? 'Loading Tracks...' : 'Connecting to Spotify...'}</p>
+      <div className="flex flex-col items-center justify-center min-h-screen text-gray-400 bg-[#0a0a0a] text-foreground">
+        <Loader2 className="w-12 h-12 animate-spin mb-4 text-[#D4AF37]" />
+        <p className="text-[#D4AF37]/80">{status === 'FETCHING' ? 'Loading Tracks...' : 'Connecting to Spotify...'}</p>
       </div>
     );
   }
 
   if (status === 'READY_TO_START') {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen p-6 text-center bg-background text-foreground">
-        <h2 className="text-3xl font-bold mb-8">{tracks.length} Tracks Loaded</h2>
+      <div className="flex flex-col items-center justify-center min-h-screen p-6 text-center bg-[#0a0a0a] text-foreground">
+        <h2 className="text-3xl font-bold mb-8 text-white">{tracks.length} Tracks Loaded</h2>
         <button 
           onClick={initPlayerAndStart}
-          className="flex items-center gap-3 px-10 py-5 bg-green-500 hover:bg-green-600 text-white rounded-full font-bold text-xl shadow-xl shadow-green-900/20 transition-all active:scale-95"
+          className="flex items-center gap-3 px-10 py-5 bg-[#D4AF37] hover:bg-[#b8952b] text-black rounded-full font-bold text-xl shadow-xl shadow-[#D4AF37]/20 transition-all active:scale-95"
         >
           <Play className="fill-current" />
           Start Game
@@ -239,50 +262,90 @@ export default function Game({ playlistId, accessToken, onExit }: { playlistId: 
   }, [currentIndex, tracks, accessToken]);
 
   return (
-    <div 
-      className="fixed inset-0 bg-background flex flex-col items-center justify-center select-none touch-none"
-      onPointerDown={handlePointerDown}
-      style={{ touchAction: 'none', userSelect: 'none' }}
-    >
-      <div className="absolute top-4 left-4 text-gray-500 text-sm font-mono tracking-widest pointer-events-none">
-        {currentIndex + 1} / {tracks.length}
-      </div>
+    <>
+      <style>{`
+        @keyframes synth {
+          0% { height: 20%; opacity: 0.5; }
+          100% { height: 100%; opacity: 1; }
+        }
+      `}</style>
+      <div 
+        className="fixed inset-0 bg-[#0a0a0a] flex flex-col items-center justify-center select-none touch-none overflow-hidden"
+        onPointerDown={handlePointerDown}
+        onPointerUp={handlePointerUpOrLeave}
+        onPointerLeave={handlePointerUpOrLeave}
+        onPointerCancel={handlePointerUpOrLeave}
+        style={{ touchAction: 'none', userSelect: 'none' }}
+      >
+        <div 
+          className="absolute top-0 left-0 h-2 bg-[#D4AF37]/80 transition-all ease-linear"
+          style={{ 
+            width: isHolding ? '100%' : '0%', 
+            transitionDuration: isHolding ? '600ms' : '150ms' 
+          }} 
+        />
 
-      <div className="absolute top-4 right-4 z-10">
-        <button 
-          onClick={(e) => { e.stopPropagation(); onExit(); }}
-          className="text-xs px-3 py-1 border border-gray-700 rounded text-gray-400 hover:bg-gray-800 transition"
-        >
-          End Game
-        </button>
-      </div>
+        <div className="absolute top-4 left-4 text-gray-500 text-sm font-mono tracking-widest pointer-events-none mt-2">
+          {currentIndex + 1} / {tracks.length}
+        </div>
 
-      <div className="flex flex-col items-center justify-center w-full max-w-md px-6 text-center transition-opacity duration-300 pointer-events-none">
-        {revealState === 'HIDDEN' ? (
-          <div className="animate-pulse flex flex-col items-center">
-            <Music className="w-24 h-24 text-gray-600 mb-8" />
-            <h2 className="text-2xl font-light text-gray-400 tracking-widest uppercase">
-              Hold to Reveal
-            </h2>
-          </div>
-        ) : (
-          <div className="flex flex-col items-center space-y-6 animate-in fade-in zoom-in duration-300">
-            <h2 className="text-4xl md:text-5xl font-bold text-white tracking-tight leading-tight">
-              {currentTrack.name}
-            </h2>
-            <div className="h-1 w-20 bg-green-500 rounded-full" />
-            <p className="text-xl md:text-2xl text-gray-300 font-medium">
-              {currentTrack.artists.map(a => a.name).join(', ')}
-            </p>
-            <p className="text-lg text-gray-500 font-mono bg-gray-900 px-4 py-1 rounded-full">
-              {originalYear}
-            </p>
-            <p className="mt-12 text-sm text-gray-600 uppercase tracking-widest">
-              Tap again for next track
-            </p>
-          </div>
-        )}
+        <div className="absolute top-4 right-4 z-10 mt-2">
+          <button 
+            onClick={(e) => { e.stopPropagation(); onExit(); }}
+            className="text-xs px-3 py-1 border border-gray-700 rounded text-gray-400 hover:bg-gray-800 transition"
+          >
+            End Game
+          </button>
+        </div>
+
+        <div className="flex flex-col items-center justify-center w-full max-w-md px-6 text-center transition-opacity duration-300 pointer-events-none">
+          {revealState === 'HIDDEN' ? (
+            <div className={`flex flex-col items-center transition-transform duration-500 ${isHolding ? 'scale-110' : 'scale-100'}`}>
+              <div className={`relative w-48 h-48 rounded-full bg-[#111] border-[6px] border-[#222] shadow-xl shadow-black/80 flex items-center justify-center mb-8 animate-[spin_3s_linear_infinite] transition-all duration-300 ${isHolding ? 'ring-4 ring-[#D4AF37]/50 border-[#333]' : ''}`}>
+                <div className="absolute inset-2 rounded-full border border-gray-800/50"></div>
+                <div className="absolute inset-6 rounded-full border border-gray-800/50"></div>
+                <div className="absolute inset-10 rounded-full border border-gray-800/50"></div>
+                <div className="absolute inset-14 rounded-full border border-gray-800/50"></div>
+                <div className="w-16 h-16 rounded-full bg-[#D4AF37] flex items-center justify-center border-2 border-black z-10">
+                  <div className="w-3 h-3 rounded-full bg-[#0a0a0a]"></div>
+                </div>
+              </div>
+              <h2 className="text-2xl font-light text-[#D4AF37] tracking-widest uppercase opacity-80">
+                Hold to Reveal
+              </h2>
+            </div>
+          ) : (
+            <div className={`flex flex-col items-center w-full animate-in fade-in zoom-in duration-300 transition-transform duration-500 ${isHolding ? 'scale-95' : 'scale-100'}`}>
+              <h2 className="text-4xl md:text-5xl font-bold text-white tracking-tight leading-tight mb-4">
+                {currentTrack.name}
+              </h2>
+              
+              <div className="flex items-center justify-center space-x-3 text-xl md:text-2xl font-light text-[#D4AF37] mb-8">
+                <span>{currentTrack.artists.map(a => a.name).join(', ')}</span>
+                <span className="text-gray-600">|</span>
+                <span className="font-mono text-white bg-gray-900/50 px-3 py-1 rounded">{originalYear}</span>
+              </div>
+
+              <div className="flex items-end justify-center space-x-1.5 h-16 mb-12">
+                {[...Array(7)].map((_, i) => (
+                  <div 
+                    key={i} 
+                    className="w-2.5 bg-[#D4AF37] rounded-t-sm"
+                    style={{ 
+                      animation: `synth ${0.4 + (i % 3) * 0.15}s infinite alternate ease-in-out`,
+                      animationDelay: `${i * 0.1}s`,
+                    }} 
+                  />
+                ))}
+              </div>
+
+              <p className={`text-sm uppercase tracking-widest transition-colors duration-300 ${isHolding ? 'text-[#D4AF37]' : 'text-gray-600'}`}>
+                Hold for next track
+              </p>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 }
