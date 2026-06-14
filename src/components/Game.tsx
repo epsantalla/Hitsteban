@@ -365,17 +365,12 @@ export default function Game({ playlistId, accessToken, onExit }: { playlistId: 
           {revealState === 'HIDDEN' ? (
             <div className={`flex flex-col items-center transition-transform duration-500 ${isHolding ? 'scale-110' : 'scale-100'}`}>
               <div className={`relative w-48 h-48 rounded-full bg-[#1e1e1e] border-[6px] border-[#2c2c2c] shadow-xl shadow-black/80 flex items-center justify-center mb-8 animate-[spin_3s_linear_infinite] transition-all duration-300 ${isHolding ? 'ring-4 ring-[#D4AF37]/50 border-[#444]' : ''}`}>
-                {/* Grooves */}
-                <div className="absolute inset-2 rounded-full border border-gray-500/30"></div>
-                <div className="absolute inset-6 rounded-full border border-gray-500/20"></div>
-                <div className="absolute inset-10 rounded-full border border-gray-500/30"></div>
-                <div className="absolute inset-14 rounded-full border border-gray-500/20"></div>
-
-                {/* Imperfections / Scratches */}
-                <div className="absolute top-10 left-10 w-16 h-[1px] bg-white/10 rotate-45 rounded-full"></div>
-                <div className="absolute bottom-12 right-8 w-10 h-[1px] bg-white/10 -rotate-12 rounded-full"></div>
-                <div className="absolute top-24 left-4 w-6 h-[1px] bg-white/10 rotate-75 rounded-full"></div>
-                <div className="absolute top-12 right-16 w-3 h-[2px] bg-white/20 rounded-full"></div>
+                {/* Grooves with asymmetrical border colors to catch the "light" while spinning */}
+                <div className="absolute inset-[6px] rounded-full border border-t-white/20 border-r-transparent border-b-white/5 border-l-transparent rotate-12"></div>
+                <div className="absolute inset-3 rounded-full border border-t-transparent border-r-white/10 border-b-transparent border-l-white/20 -rotate-45"></div>
+                <div className="absolute inset-6 rounded-full border border-t-white/10 border-r-transparent border-b-white/20 border-l-transparent rotate-90"></div>
+                <div className="absolute inset-10 rounded-full border border-t-transparent border-r-white/20 border-b-transparent border-l-white/5 rotate-180"></div>
+                <div className="absolute inset-14 rounded-full border border-t-white/15 border-r-transparent border-b-transparent border-l-white/10 -rotate-12"></div>
 
                 {/* Center Label */}
                 <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#BF953F] via-[#FCF6BA] to-[#B38728] flex items-center justify-center border-2 border-black z-10 relative overflow-hidden">

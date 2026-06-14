@@ -14,7 +14,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "Guess the Song",
+  title: "Hitsteban",
   description: "Spotify Guess the Song Web Application",
 };
 

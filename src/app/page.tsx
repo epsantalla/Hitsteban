@@ -3,6 +3,9 @@
 import { useSession, signIn, signOut } from "next-auth/react";
 import { useState } from "react";
 import Game from "@/components/Game";
+import { Playfair_Display } from "next/font/google";
+
+const playfair = Playfair_Display({ subsets: ["latin"] });
 
 export default function Home() {
   const { data: session, status } = useSession();
@@ -20,8 +23,8 @@ export default function Home() {
   if (!session) {
     return (
       <main className="flex min-h-screen flex-col items-center justify-center p-6 bg-[#0a0a0a] text-foreground">
-        <h1 className="text-5xl font-extrabold mb-12 text-center bg-clip-text text-transparent bg-gradient-to-r from-[#BF953F] via-[#FCF6BA] to-[#B38728] drop-shadow-sm">
-          Guess the Song
+        <h1 className={`${playfair.className} text-6xl font-black mb-12 text-center bg-clip-text text-transparent bg-gradient-to-r from-[#BF953F] via-[#FCF6BA] to-[#B38728] drop-shadow-sm`}>
+          Hitsteban
         </h1>
         <button
           onClick={() => signIn("spotify")}
@@ -67,8 +70,8 @@ export default function Home() {
       </div>
 
       <div className="w-full max-w-md mx-auto">
-        <h1 className="text-4xl font-extrabold mb-8 text-center bg-clip-text text-transparent bg-gradient-to-r from-[#BF953F] via-[#FCF6BA] to-[#B38728] drop-shadow-sm">
-          Guess the Song
+        <h1 className={`${playfair.className} text-5xl font-black mb-8 text-center bg-clip-text text-transparent bg-gradient-to-r from-[#BF953F] via-[#FCF6BA] to-[#B38728] drop-shadow-sm`}>
+          Hitsteban
         </h1>
         
         <form onSubmit={handleStart} className="w-full flex flex-col gap-6">
