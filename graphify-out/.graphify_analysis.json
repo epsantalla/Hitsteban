@@ -1,0 +1,233 @@
+{
+  "communities": {
+    "0": [
+      "eslint",
+      "eslint_config_next",
+      "package_devdependencies",
+      "package_devdependencies_eslint",
+      "package_devdependencies_eslint_config_next",
+      "package_devdependencies_postcss",
+      "package_devdependencies_tailwindcss",
+      "package_devdependencies_types_node",
+      "package_devdependencies_types_react",
+      "package_devdependencies_types_react_dom",
+      "package_devdependencies_types_spotify_web_playback_sdk",
+      "package_devdependencies_typescript",
+      "postcss",
+      "tailwindcss",
+      "types_node",
+      "types_react",
+      "types_react_dom",
+      "types_spotify_web_playback_sdk",
+      "typescript"
+    ],
+    "1": [
+      "ref_src",
+      "tsconfig_compileroptions",
+      "tsconfig_compileroptions_allowjs",
+      "tsconfig_compileroptions_esmoduleinterop",
+      "tsconfig_compileroptions_incremental",
+      "tsconfig_compileroptions_isolatedmodules",
+      "tsconfig_compileroptions_jsx",
+      "tsconfig_compileroptions_module",
+      "tsconfig_compileroptions_moduleresolution",
+      "tsconfig_compileroptions_noemit",
+      "tsconfig_compileroptions_paths",
+      "tsconfig_compileroptions_plugins",
+      "tsconfig_compileroptions_resolvejsonmodule",
+      "tsconfig_compileroptions_skiplibcheck",
+      "tsconfig_compileroptions_strict",
+      "tsconfig_compileroptions_target",
+      "tsconfig_paths"
+    ],
+    "2": [
+      "src_app_page",
+      "src_app_page_home",
+      "src_app_page_playfair",
+      "src_components_carouselgame",
+      "src_components_carouselgame_carouselgame",
+      "src_components_carouselgame_player",
+      "src_components_carouselgame_track",
+      "src_components_game",
+      "src_components_game_game",
+      "src_components_game_track",
+      "src_lib_modes",
+      "src_lib_modes_available_modes",
+      "src_lib_modes_gamemode"
+    ],
+    "3": [
+      "lucide_react",
+      "next",
+      "next_auth",
+      "package_dependencies",
+      "package_dependencies_lucide_react",
+      "package_dependencies_next",
+      "package_dependencies_next_auth",
+      "package_dependencies_react",
+      "package_dependencies_react_dom",
+      "react",
+      "react_dom"
+    ],
+    "4": [
+      "package",
+      "package_name",
+      "package_private",
+      "package_scripts",
+      "package_scripts_build",
+      "package_scripts_dev",
+      "package_scripts_lint",
+      "package_scripts_start",
+      "package_version"
+    ],
+    "5": [
+      "ref_next_env_d_ts",
+      "ref_next_types_ts",
+      "ref_node_modules",
+      "ref_ts",
+      "ref_tsx",
+      "tsconfig",
+      "tsconfig_exclude",
+      "tsconfig_include"
+    ],
+    "6": [
+      "src_app_layout",
+      "src_app_layout_inter",
+      "src_app_layout_metadata",
+      "src_app_layout_rootlayout",
+      "src_app_layout_viewport",
+      "src_components_providers",
+      "src_components_providers_providers"
+    ],
+    "7": [
+      "src_types_next_auth_d",
+      "src_types_next_auth_d_jwt",
+      "src_types_next_auth_d_next_auth",
+      "src_types_next_auth_d_next_auth_jwt",
+      "src_types_next_auth_d_session"
+    ],
+    "8": [
+      "ref_dom",
+      "ref_dom_iterable",
+      "ref_esnext",
+      "tsconfig_compileroptions_lib"
+    ],
+    "9": [
+      "src_app_api_auth_nextauth_route",
+      "src_app_api_auth_nextauth_route_handler",
+      "src_app_api_auth_nextauth_route_refreshaccesstoken",
+      "src_app_api_auth_nextauth_route_scopes"
+    ],
+    "10": [
+      "next_config",
+      "next_config_nextconfig"
+    ],
+    "11": [
+      "postcss_config",
+      "postcss_config_config"
+    ],
+    "12": [
+      "tailwind_config",
+      "tailwind_config_config"
+    ]
+  },
+  "cohesion": {
+    "0": 0.10526315789473684,
+    "1": 0.11764705882352941,
+    "2": 0.1794871794871795,
+    "3": 0.18181818181818182,
+    "4": 0.2222222222222222,
+    "5": 0.25,
+    "6": 0.3333333333333333,
+    "7": 0.4,
+    "8": 0.5,
+    "9": 0.5,
+    "10": 1.0,
+    "11": 1.0,
+    "12": 1.0
+  },
+  "gods": [
+    {
+      "id": "tsconfig_compileroptions",
+      "label": "compilerOptions",
+      "degree": 16
+    },
+    {
+      "id": "package_scripts",
+      "label": "scripts",
+      "degree": 5
+    },
+    {
+      "id": "tsconfig_include",
+      "label": "include",
+      "degree": 5
+    },
+    {
+      "id": "tsconfig_compileroptions_lib",
+      "label": "lib",
+      "degree": 4
+    },
+    {
+      "id": "src_lib_modes_available_modes",
+      "label": "AVAILABLE_MODES",
+      "degree": 3
+    },
+    {
+      "id": "package_dependencies_next",
+      "label": "next",
+      "degree": 2
+    },
+    {
+      "id": "package_dependencies_react",
+      "label": "react",
+      "degree": 2
+    },
+    {
+      "id": "package_dependencies_react_dom",
+      "label": "react-dom",
+      "degree": 2
+    },
+    {
+      "id": "package_dependencies_next_auth",
+      "label": "next-auth",
+      "degree": 2
+    },
+    {
+      "id": "package_dependencies_lucide_react",
+      "label": "lucide-react",
+      "degree": 2
+    }
+  ],
+  "surprises": [],
+  "questions": [
+    {
+      "type": "bridge_node",
+      "question": "Why does `devDependencies` connect `devDependencies` to `package.json`?",
+      "why": "High betweenness centrality (0.098) - this node is a cross-community bridge."
+    },
+    {
+      "type": "bridge_node",
+      "question": "Why does `compilerOptions` connect `compilerOptions` to `lib`, `include`?",
+      "why": "High betweenness centrality (0.066) - this node is a cross-community bridge."
+    },
+    {
+      "type": "bridge_node",
+      "question": "Why does `dependencies` connect `dependencies` to `package.json`?",
+      "why": "High betweenness centrality (0.062) - this node is a cross-community bridge."
+    },
+    {
+      "type": "isolated_nodes",
+      "question": "What connects `nextConfig`, `name`, `version` to the rest of the system?",
+      "why": "60 weakly-connected nodes found - possible documentation gaps or missing edges."
+    },
+    {
+      "type": "low_cohesion",
+      "question": "Should `devDependencies` be split into smaller, more focused modules?",
+      "why": "Cohesion score 0.10526315789473684 - nodes in this community are weakly interconnected."
+    },
+    {
+      "type": "low_cohesion",
+      "question": "Should `compilerOptions` be split into smaller, more focused modules?",
+      "why": "Cohesion score 0.11764705882352941 - nodes in this community are weakly interconnected."
+    }
+  ]
+}

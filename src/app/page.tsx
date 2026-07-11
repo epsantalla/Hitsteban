@@ -3,7 +3,9 @@
 import { useSession, signIn, signOut } from "next-auth/react";
 import { useState, useEffect } from "react";
 import Game from "@/components/Game";
+import CarouselGame from "@/components/CarouselGame";
 import { Playfair_Display } from "next/font/google";
+import { AVAILABLE_MODES } from "@/lib/modes";
 
 const playfair = Playfair_Display({ subsets: ["latin"] });
 
@@ -12,6 +14,13 @@ export default function Home() {
   const [playlistId, setPlaylistId] = useState("");
   const [isGameStarted, setIsGameStarted] = useState(false);
   const [userPlaylists, setUserPlaylists] = useState<any[]>([]);
+  const [selectedMode, setSelectedMode] = useState(AVAILABLE_MODES[0].id);
+
+  useEffect(() => {
+    if ((session as any)?.error === "RefreshAccessTokenError") {
+      signIn("spotify");
+    }
+  }, [session]);
 
   useEffect(() => {
     if (session?.accessToken) {
@@ -53,7 +62,10 @@ export default function Home() {
   }
 
   if (isGameStarted && session.accessToken) {
-    return <Game playlistId={playlistId} accessToken={session.accessToken} onExit={() => setIsGameStarted(false)} />;
+    if (selectedMode === "carousel") {
+      return <CarouselGame playlistId={playlistId} accessToken={session.accessToken} onExit={() => setIsGameStarted(false)} />;
+    }
+    return <Game playlistId={playlistId} accessToken={session.accessToken} mode={selectedMode} onExit={() => setIsGameStarted(false)} />;
   }
 
   const handleStart = (e: React.FormEvent) => {
@@ -91,6 +103,34 @@ export default function Home() {
         </h1>
         
         <form onSubmit={handleStart} className="w-full flex flex-col gap-6">
+          <div className="flex flex-col gap-2">
+            <label htmlFor="mode" className="text-sm text-[#BF953F]/80 font-medium">
+              Game Mode
+            </label>
+            <div className="relative">
+              <select
+                id="mode"
+                value={selectedMode}
+                onChange={(e) => setSelectedMode(e.target.value)}
+                className="w-full px-4 py-4 bg-[#111] border border-gray-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#BF953F] text-white shadow-inner appearance-none cursor-pointer"
+              >
+                {AVAILABLE_MODES.map(mode => (
+                  <option key={mode.id} value={mode.id}>
+                    {mode.name}
+                  </option>
+                ))}
+              </select>
+              <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none">
+                <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+                </svg>
+              </div>
+            </div>
+            <p className="text-xs text-gray-500 mt-1 mb-4">
+              {AVAILABLE_MODES.find(m => m.id === selectedMode)?.description}
+            </p>
+          </div>
+
           <div className="flex flex-col gap-2">
             <label htmlFor="playlist" className="text-sm text-[#BF953F]/80 font-medium">
               Spotify Playlist ID

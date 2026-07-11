@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { Play, Loader2, Music } from "lucide-react";
+import { AVAILABLE_MODES } from "@/lib/modes";
 
 interface Track {
   id: string;
@@ -11,7 +12,7 @@ interface Track {
   album: { release_date: string };
 }
 
-export default function Game({ playlistId, accessToken, onExit }: { playlistId: string, accessToken: string, onExit: () => void }) {
+export default function Game({ playlistId, accessToken, mode, onExit }: { playlistId: string, accessToken: string, mode: string, onExit: () => void }) {
   const [tracks, setTracks] = useState<Track[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [status, setStatus] = useState<'FETCHING' | 'READY_TO_START' | 'INITIALIZING_SDK' | 'PLAYING' | 'ERROR'>('FETCHING');
@@ -23,6 +24,12 @@ export default function Game({ playlistId, accessToken, onExit }: { playlistId: 
 
   const deviceIdRef = useRef<string | null>(null);
   const playerRef = useRef<any>(null);
+
+  // Keep a ref to the latest access token so the Spotify Player always has the freshest one
+  const accessTokenRef = useRef(accessToken);
+  useEffect(() => {
+    accessTokenRef.current = accessToken;
+  }, [accessToken]);
 
   useEffect(() => {
     const loadTracks = async () => {
@@ -194,7 +201,7 @@ export default function Game({ playlistId, accessToken, onExit }: { playlistId: 
       // @ts-ignore
       const player = new window.Spotify.Player({
         name: 'Guess the Song Player',
-        getOAuthToken: (cb: any) => { cb(accessToken); },
+        getOAuthToken: (cb: any) => { cb(accessTokenRef.current); },
         volume: 0.5
       });
 
@@ -218,7 +225,7 @@ export default function Game({ playlistId, accessToken, onExit }: { playlistId: 
       const res = await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
         method: 'PUT',
         headers: {
-          Authorization: `Bearer ${accessToken}`,
+          Authorization: `Bearer ${accessTokenRef.current}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ uris: [tracks[index].uri] }),
@@ -360,8 +367,9 @@ export default function Game({ playlistId, accessToken, onExit }: { playlistId: 
           }} 
         />
 
-        <div className="absolute top-4 left-4 text-gray-500 text-sm font-mono tracking-widest pointer-events-none mt-2">
-          {currentIndex + 1} / {tracks.length}
+        <div className="absolute top-4 left-4 text-gray-500 text-sm font-mono tracking-widest pointer-events-none mt-2 flex flex-col gap-1">
+          <span>{currentIndex + 1} / {tracks.length}</span>
+          <span className="text-xs opacity-50 uppercase">{AVAILABLE_MODES.find(m => m.id === mode)?.name || mode}</span>
         </div>
 
         <div className="absolute top-4 right-4 z-10 mt-2">
