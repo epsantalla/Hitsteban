@@ -32,15 +32,15 @@ const playErrorSound = () => {
     
     // Harsher, louder error sound
     osc.type = 'sawtooth';
-    osc.frequency.setValueAtTime(200, ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(50, ctx.currentTime + 0.4);
+    osc.frequency.setValueAtTime(260, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(65, ctx.currentTime + 0.5);
     
-    // Increased volume (from 0.3 to 1.5)
-    gain.gain.setValueAtTime(1.5, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+    // Increased volume (from 1.5 to 1.95, 30% higher)
+    gain.gain.setValueAtTime(1.95, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
     
     osc.start();
-    osc.stop(ctx.currentTime + 0.4);
+    osc.stop(ctx.currentTime + 0.5);
   } catch(e) {}
 };
 
@@ -332,8 +332,7 @@ export default function CarouselGame({ playlistId, accessToken, onExit }: { play
     if (iconAssignments.title) { const p = newPlayers.find(p => p.id === iconAssignments.title); if (p) p.score += settings.ptsTitle; }
     if (iconAssignments.artist) { const p = newPlayers.find(p => p.id === iconAssignments.artist); if (p) p.score += settings.ptsArtist; }
     
-    // Sort leaderboard
-    newPlayers.sort((a, b) => b.score - a.score);
+    // Keep players in original seating order in the state!
     setPlayers(newPlayers);
     setCarouselPhase('leaderboard');
   };
@@ -498,9 +497,9 @@ export default function CarouselGame({ playlistId, accessToken, onExit }: { play
       </div>
 
       {carouselPhase === 'intro' && (
-        <div className="flex-1 flex flex-col items-center justify-center px-6 text-center animate-in fade-in duration-500">
+        <div className="flex-1 flex flex-col items-center justify-center px-6 text-center animate-in fade-in duration-500 w-full">
           <h3 className="text-2xl text-gray-400 tracking-widest uppercase mb-4">Get Ready</h3>
-          <h2 className="text-7xl font-bold text-white mb-6 gem-text drop-shadow-lg">{players[activePlayerIndex].name}</h2>
+          <h2 className="text-7xl font-bold text-white mb-6 gem-text drop-shadow-lg truncate w-full max-w-[90vw] px-4 pb-2">{players[activePlayerIndex].name}</h2>
           <div className="mt-8 flex items-center justify-center">
             <Loader2 className="animate-spin text-[#B81137] w-12 h-12" />
           </div>
@@ -508,11 +507,11 @@ export default function CarouselGame({ playlistId, accessToken, onExit }: { play
       )}
 
       {carouselPhase === 'playing' && (
-        <div className="flex-1 flex flex-col items-center justify-center px-6 text-center">
-          <div className="mb-12">
+        <div className="flex-1 flex flex-col items-center justify-center px-6 text-center w-full">
+          <div className="mb-12 w-full flex flex-col items-center">
             <h3 className="text-xl text-gray-400 tracking-widest uppercase mb-2">Current Player</h3>
-            <h2 className="text-7xl font-bold text-white mb-6 tracking-tight drop-shadow-md">{players[activePlayerIndex].name}</h2>
-            <div className={`text-[6rem] leading-none font-mono font-bold transition-colors ${timeLeft <= 5 ? 'text-red-500 animate-pulse' : 'text-[#B81137] drop-shadow-md'}`}>
+            <h2 className="text-7xl font-bold text-white mb-6 tracking-tight drop-shadow-md truncate w-full max-w-[90vw] px-4 pb-2">{players[activePlayerIndex].name}</h2>
+            <div className={`text-[6rem] leading-none font-mono font-bold transition-colors ${timeLeft <= 5 ? 'text-red-500 animate-pulse' : 'text-white drop-shadow-md'}`}>
               00:{timeLeft.toString().padStart(2, '0')}
             </div>
           </div>
@@ -521,18 +520,18 @@ export default function CarouselGame({ playlistId, accessToken, onExit }: { play
             {!isLastPlayer && (
               <button 
                 onPointerDown={handleNextPlayerDown}
-                className="relative w-full py-6 rounded-2xl bg-[#1a1a1a] border border-[#B81137]/40 overflow-hidden active:scale-95 transition-transform shadow-lg"
+                className="relative w-full py-6 rounded-2xl gem-bg overflow-hidden active:scale-95 transition-transform shadow-lg"
               >
-                <div className="absolute left-0 top-0 bottom-0 bg-white/10 transition-all ease-linear" style={{ width: isHoldingNext ? '100%' : '0%', transitionDuration: isHoldingNext ? '300ms' : '150ms' }} />
-                <span className="relative z-10 font-bold text-2xl text-white tracking-widest uppercase">Next Player</span>
+                <div className="absolute left-0 top-0 bottom-0 bg-white/30 transition-all ease-linear" style={{ width: isHoldingNext ? '100%' : '0%', transitionDuration: isHoldingNext ? '300ms' : '150ms' }} />
+                <span className="relative z-10 font-bold text-2xl text-white tracking-widest uppercase drop-shadow-md">Next Player</span>
               </button>
             )}
             <button 
               onPointerDown={handleEndDown}
-              className="relative w-full py-6 rounded-2xl gem-bg overflow-hidden active:scale-95 transition-transform"
+              className={`relative w-full py-6 rounded-2xl overflow-hidden active:scale-95 transition-transform ${isLastPlayer ? 'gem-bg shadow-lg' : 'bg-[#1a1a1a] border border-[#B81137]/40'}`}
             >
-              <div className="absolute left-0 top-0 bottom-0 bg-white/30 transition-all ease-linear" style={{ width: isHoldingEnd ? '100%' : '0%', transitionDuration: isHoldingEnd ? '600ms' : '150ms' }} />
-              <span className={`relative z-10 font-bold text-2xl tracking-widest uppercase text-white drop-shadow-md`}>End & Reveal</span>
+              <div className="absolute left-0 top-0 bottom-0 bg-white/10 transition-all ease-linear" style={{ width: isHoldingEnd ? '100%' : '0%', transitionDuration: isHoldingEnd ? '600ms' : '150ms' }} />
+              <span className={`relative z-10 font-bold text-2xl tracking-widest uppercase text-white ${isLastPlayer ? 'drop-shadow-md' : 'opacity-60'}`}>End & Reveal</span>
             </button>
           </div>
         </div>
@@ -588,7 +587,7 @@ export default function CarouselGame({ playlistId, accessToken, onExit }: { play
                     selectedIconToAssign ? 'bg-[#1a1a1a] border-[#B81137]/30 hover:border-[#B81137]' : 'bg-[#111] border-transparent hover:bg-[#1a1a1a]'
                   }`}
                 >
-                  <span className="text-white font-medium text-lg">{p.name}</span>
+                  <span className="text-white font-medium text-lg truncate pr-4 max-w-[150px] text-left">{p.name}</span>
                   <div className="flex gap-2 min-h-[32px] min-w-[32px]">
                     {pIcons.map(type => {
                       const IconComponent = type === 'year' ? Calendar : type === 'title' ? Music : Mic2;
@@ -619,11 +618,11 @@ export default function CarouselGame({ playlistId, accessToken, onExit }: { play
           <h2 className="text-4xl font-bold text-white tracking-widest uppercase mb-6 flex-shrink-0">Leaderboard</h2>
           
           <div className="w-full max-w-sm flex flex-col gap-3 mb-6 flex-1 overflow-y-auto min-h-0 pb-4">
-            {players.map((p, i) => (
-              <div key={p.id} className="flex items-center p-4 rounded-xl bg-[#111] border border-[#B81137]/20 shadow-sm flex-shrink-0">
+            {[...players].sort((a, b) => b.score - a.score).map((p, i) => (
+              <div key={p.id} className="flex items-center p-4 rounded-xl bg-[#111] border border-[#B81137]/20 shadow-sm flex-shrink-0 overflow-hidden">
                 <span className={`w-10 text-2xl font-black ${i === 0 ? 'text-[#B81137]' : i === 1 ? 'text-gray-300' : i === 2 ? 'text-amber-700' : 'text-gray-600'}`}>#{i+1}</span>
-                <span className="flex-1 text-white text-xl font-medium">{p.name}</span>
-                <span className="gem-text font-bold text-2xl">{p.score} <span className="text-sm text-gray-500">pts</span></span>
+                <span className="flex-1 text-white text-xl font-medium truncate pr-2">{p.name}</span>
+                <span className="gem-text font-bold text-2xl flex-shrink-0">{p.score} <span className="text-sm text-gray-500">pts</span></span>
               </div>
             ))}
           </div>
