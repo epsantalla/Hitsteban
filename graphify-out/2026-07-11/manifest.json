@@ -1,0 +1,67 @@
+{
+  "next.config.mjs": {
+    "mtime": 1781455238.0232098,
+    "ast_hash": "21958f5752add43cc47ab0ff5172cd46",
+    "semantic_hash": "21958f5752add43cc47ab0ff5172cd46"
+  },
+  "package.json": {
+    "mtime": 1781455235.1081772,
+    "ast_hash": "e15d2f17a26aeac7a7e2f0a52c1013d3",
+    "semantic_hash": "e15d2f17a26aeac7a7e2f0a52c1013d3"
+  },
+  "postcss.config.mjs": {
+    "mtime": 1781455238.0110111,
+    "ast_hash": "b7941c02b947e17ae32f67ae7e664ec8",
+    "semantic_hash": "b7941c02b947e17ae32f67ae7e664ec8"
+  },
+  "src/app/api/auth/[...nextauth]/route.ts": {
+    "mtime": 1783786996.377238,
+    "ast_hash": "193a6bbdeda275c620b323d97197ee5a",
+    "semantic_hash": "193a6bbdeda275c620b323d97197ee5a"
+  },
+  "src/app/layout.tsx": {
+    "mtime": 1781468631.9127033,
+    "ast_hash": "1f0e0d74f49f207fefe999efc04b06a1",
+    "semantic_hash": "1f0e0d74f49f207fefe999efc04b06a1"
+  },
+  "src/app/page.tsx": {
+    "mtime": 1783788668.7116206,
+    "ast_hash": "d74c54a5e2efea5eaa0019576deee32f",
+    "semantic_hash": "d74c54a5e2efea5eaa0019576deee32f"
+  },
+  "src/components/Game.tsx": {
+    "mtime": 1783787569.4663563,
+    "ast_hash": "ae24f4a2a975acabe6643e6c6bfac32a",
+    "semantic_hash": "ae24f4a2a975acabe6643e6c6bfac32a"
+  },
+  "src/components/Providers.tsx": {
+    "mtime": 1783787016.3822958,
+    "ast_hash": "f2b8ab32d51ba8013c916ba6fc1ffca1",
+    "semantic_hash": "f2b8ab32d51ba8013c916ba6fc1ffca1"
+  },
+  "src/types/next-auth.d.ts": {
+    "mtime": 1781455260.5062983,
+    "ast_hash": "11c07c4a3ccd8db6172d383321f5528f",
+    "semantic_hash": "11c07c4a3ccd8db6172d383321f5528f"
+  },
+  "tailwind.config.ts": {
+    "mtime": 1781455236.610972,
+    "ast_hash": "385affb98692cca50ba47b18501dce41",
+    "semantic_hash": "385affb98692cca50ba47b18501dce41"
+  },
+  "tsconfig.json": {
+    "mtime": 1781455235.8323278,
+    "ast_hash": "492fe1df794fccc27c69bfa6dc017b80",
+    "semantic_hash": "492fe1df794fccc27c69bfa6dc017b80"
+  },
+  "src/lib/modes.ts": {
+    "mtime": 1783788572.9776385,
+    "ast_hash": "cad1f0bbad7454c73d4d586fa47c1099",
+    "semantic_hash": "cad1f0bbad7454c73d4d586fa47c1099"
+  },
+  "src/components/CarouselGame.tsx": {
+    "mtime": 1783788655.5640507,
+    "ast_hash": "9226e7a75dd3adc1a98b723b4f6e7707",
+    "semantic_hash": "9226e7a75dd3adc1a98b723b4f6e7707"
+  }
+}
