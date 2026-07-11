@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { Play, Loader2, Music, Calendar, Mic2, Plus, X, Check, Trophy, ChevronRight, SkipForward } from "lucide-react";
+import { Play, Loader2, Music, Calendar, Mic2, Plus, X, Check, Trophy, ChevronRight, SkipForward, Settings } from "lucide-react";
 
 interface Track {
   id: string;
@@ -47,7 +47,8 @@ const playErrorSound = () => {
 export default function CarouselGame({ playlistId, accessToken, onExit }: { playlistId: string, accessToken: string, onExit: () => void }) {
   const [tracks, setTracks] = useState<Track[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [status, setStatus] = useState<'FETCHING' | 'SETUP' | 'INITIALIZING_SDK' | 'READY' | 'ERROR'>('FETCHING');
+  const [status, setStatus] = useState<'SETUP' | 'INITIALIZING_SDK' | 'READY' | 'ERROR'>('SETUP');
+  const [isFetchingTracks, setIsFetchingTracks] = useState(true);
   const [errorMsg, setErrorMsg] = useState("");
   const [originalYear, setOriginalYear] = useState<string>('');
 
@@ -58,14 +59,24 @@ export default function CarouselGame({ playlistId, accessToken, onExit }: { play
 
   // Game state
   const [players, setPlayers] = useState<Player[]>([
-    { id: '1', name: 'Player 1', score: 0 },
-    { id: '2', name: 'Player 2', score: 0 }
+    { id: '1', name: '', score: 0 },
+    { id: '2', name: '', score: 0 }
   ]);
   const [carouselPhase, setCarouselPhase] = useState<'intro' | 'playing' | 'scoring' | 'leaderboard'>('intro');
   const [startingPlayerIndexForSong, setStartingPlayerIndexForSong] = useState(0);
   const [turnsTaken, setTurnsTaken] = useState(1);
   const [timeLeft, setTimeLeft] = useState(40);
   const [isGracePeriod, setIsGracePeriod] = useState(false);
+
+  // Settings
+  const [settings, setSettings] = useState({
+    initialTime: 40,
+    turnTime: 30,
+    ptsYear: 5,
+    ptsTitle: 3,
+    ptsArtist: 2,
+  });
+  const [showSettings, setShowSettings] = useState(false);
 
   // Scoring state (Click to assign)
   const [iconAssignments, setIconAssignments] = useState<{year: string | null, title: string | null, artist: string | null}>({
@@ -107,7 +118,7 @@ export default function CarouselGame({ playlistId, accessToken, onExit }: { play
         
         if (allTracks.length === 0) throw new Error(`Playlist is empty.`);
         setTracks(allTracks);
-        setStatus('SETUP');
+        setIsFetchingTracks(false);
       } catch (err: any) {
         setErrorMsg(err.message);
         setStatus('ERROR');
@@ -151,13 +162,8 @@ export default function CarouselGame({ playlistId, accessToken, onExit }: { play
 
   const initPlayerAndStart = () => {
     setStatus('INITIALIZING_SDK');
-    const script = document.createElement("script");
-    script.src = "https://sdk.scdn.co/spotify-player.js";
-    script.async = true;
-    document.body.appendChild(script);
 
-    // @ts-ignore
-    window.onSpotifyWebPlaybackSDKReady = () => {
+    const startSdk = () => {
       // @ts-ignore
       const player = new window.Spotify.Player({
         name: 'Hitsteban Carousel',
@@ -168,27 +174,55 @@ export default function CarouselGame({ playlistId, accessToken, onExit }: { play
       player.addListener('ready', ({ device_id }: { device_id: string }) => {
         deviceIdRef.current = device_id;
         setStatus('READY');
-        setCarouselPhase('intro'); // Go to intro first
+        setCarouselPhase('intro');
       });
+      player.addListener('initialization_error', ({ message }: any) => { console.error(message); setErrorMsg(message); setStatus('ERROR'); });
+      player.addListener('authentication_error', ({ message }: any) => { console.error(message); setErrorMsg(message); setStatus('ERROR'); });
+      player.addListener('account_error', ({ message }: any) => { console.error(message); setErrorMsg(message); setStatus('ERROR'); });
       player.connect();
     };
+
+    // @ts-ignore
+    if (window.Spotify) {
+      startSdk();
+    } else {
+      // @ts-ignore
+      window.onSpotifyWebPlaybackSDKReady = startSdk;
+      const script = document.createElement("script");
+      script.src = "https://sdk.scdn.co/spotify-player.js";
+      script.async = true;
+      document.body.appendChild(script);
+    }
   };
 
-  const playTrack = async (index: number, deviceId: string) => {
-    await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
-      method: 'PUT',
-      headers: { Authorization: `Bearer ${accessTokenRef.current}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ uris: [tracks[index].uri] }),
-    });
+  const playTrack = async (index: number, deviceId: string, retries = 3) => {
+    try {
+      const res = await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${accessTokenRef.current}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ uris: [tracks[index].uri] }),
+      });
+      if (!res.ok && retries > 0) {
+        await new Promise(r => setTimeout(r, 500));
+        return playTrack(index, deviceId, retries - 1);
+      }
+    } catch (err) {}
   };
 
   const startGame = () => {
-    const validPlayers = players.filter(p => p.name.trim() !== "").map(p => ({...p, name: p.name.trim()}));
-    if (validPlayers.length < 2) return;
-    setPlayers(validPlayers);
-    setStartingPlayerIndexForSong(Math.floor(Math.random() * validPlayers.length));
+    if (isFetchingTracks) return;
+    
+    // Convert empty names to "Player X"
+    const finalPlayers = players.map((p, i) => ({
+      ...p,
+      name: p.name.trim() === "" ? `Player ${i + 1}` : p.name.trim()
+    }));
+    
+    if (finalPlayers.length < 2) return;
+    setPlayers(finalPlayers);
+    setStartingPlayerIndexForSong(Math.floor(Math.random() * finalPlayers.length));
     setTurnsTaken(1);
-    setTimeLeft(40); // 40s for the first player
+    setTimeLeft(settings.initialTime); // configured initial time
     initPlayerAndStart();
   };
 
@@ -213,7 +247,7 @@ export default function CarouselGame({ playlistId, accessToken, onExit }: { play
   const moveToNextPlayer = () => {
     const nextTurns = turnsTaken + 1;
     setTurnsTaken(nextTurns);
-    setTimeLeft(nextTurns === 1 ? 40 : 30);
+    setTimeLeft(nextTurns === 1 ? settings.initialTime : settings.turnTime);
     setIsGracePeriod(true);
     setTimeout(() => setIsGracePeriod(false), 1500); // 1.5s grace period to match longer flash
   };
@@ -294,9 +328,9 @@ export default function CarouselGame({ playlistId, accessToken, onExit }: { play
 
   const handleConfirmScoring = () => {
     const newPlayers = [...players];
-    if (iconAssignments.year) { const p = newPlayers.find(p => p.id === iconAssignments.year); if (p) p.score += 5; }
-    if (iconAssignments.title) { const p = newPlayers.find(p => p.id === iconAssignments.title); if (p) p.score += 3; }
-    if (iconAssignments.artist) { const p = newPlayers.find(p => p.id === iconAssignments.artist); if (p) p.score += 2; }
+    if (iconAssignments.year) { const p = newPlayers.find(p => p.id === iconAssignments.year); if (p) p.score += settings.ptsYear; }
+    if (iconAssignments.title) { const p = newPlayers.find(p => p.id === iconAssignments.title); if (p) p.score += settings.ptsTitle; }
+    if (iconAssignments.artist) { const p = newPlayers.find(p => p.id === iconAssignments.artist); if (p) p.score += settings.ptsArtist; }
     
     // Sort leaderboard
     newPlayers.sort((a, b) => b.score - a.score);
@@ -311,7 +345,7 @@ export default function CarouselGame({ playlistId, accessToken, onExit }: { play
     setCurrentIndex(prev => prev + 1);
     setStartingPlayerIndexForSong(prev => (prev + 1) % players.length);
     setTurnsTaken(1);
-    setTimeLeft(40); // 40s for first player
+    setTimeLeft(settings.initialTime);
     setIconAssignments({ year: null, title: null, artist: null });
     setSelectedIconToAssign(null);
     setCarouselPhase('intro'); // Go to intro for the new song
@@ -320,11 +354,11 @@ export default function CarouselGame({ playlistId, accessToken, onExit }: { play
   // --- RENDERING ---
 
   if (status === 'ERROR') return <div className="flex flex-col items-center justify-center min-h-screen text-red-500 bg-[#0a0a0a]">{errorMsg}</div>;
-  if (status === 'FETCHING' || status === 'INITIALIZING_SDK') return <div className="flex flex-col items-center justify-center min-h-screen text-[#B81137] bg-[#0a0a0a]"><Loader2 className="animate-spin w-12 h-12 mb-4" />Loading...</div>;
+  if (status === 'INITIALIZING_SDK') return <div className="flex flex-col items-center justify-center min-h-screen text-[#B81137] bg-[#0a0a0a]"><Loader2 className="animate-spin w-12 h-12 mb-4" />Loading...</div>;
   
   if (status === 'SETUP') {
     return (
-      <div className="flex flex-col items-center min-h-[100dvh] pt-12 pb-24 px-6 bg-[#0a0a0a] text-foreground overflow-y-auto touch-pan-y">
+      <div className="flex flex-col items-center min-h-[100dvh] pt-12 pb-24 px-6 bg-[#0a0a0a] text-foreground overflow-y-auto touch-pan-y relative">
         <style>{`
           .gem-bg {
             background: linear-gradient(135deg, #FF2A55 0%, #B81137 50%, #7A0B22 100%);
@@ -340,6 +374,53 @@ export default function CarouselGame({ playlistId, accessToken, onExit }: { play
             text-shadow: 0px 2px 10px rgba(184, 17, 55, 0.4);
           }
         `}</style>
+        
+        <div className="absolute top-4 right-4 z-40">
+          <button onClick={() => setShowSettings(true)} className="p-2 text-gray-500 hover:text-white transition rounded-full hover:bg-gray-800">
+            <Settings size={24} />
+          </button>
+        </div>
+
+        {showSettings && (
+          <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+            <div className="bg-[#111] border border-gray-800 rounded-2xl w-full max-w-sm p-6 shadow-2xl">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-xl font-bold text-white uppercase tracking-widest gem-text">Settings</h3>
+                <button onClick={() => setShowSettings(false)} className="text-gray-500 hover:text-white">
+                  <X size={24} />
+                </button>
+              </div>
+
+              <div className="space-y-4 mb-8 text-white">
+                <div className="flex justify-between items-center">
+                  <label className="text-sm text-gray-400">First Player Time (s)</label>
+                  <input type="number" min="5" max="120" value={settings.initialTime} onChange={(e) => setSettings({...settings, initialTime: parseInt(e.target.value) || 0})} className="w-16 bg-[#222] border border-gray-700 rounded px-2 py-1 text-center focus:outline-none focus:border-[#B81137]" />
+                </div>
+                <div className="flex justify-between items-center">
+                  <label className="text-sm text-gray-400">Next Player Time (s)</label>
+                  <input type="number" min="5" max="120" value={settings.turnTime} onChange={(e) => setSettings({...settings, turnTime: parseInt(e.target.value) || 0})} className="w-16 bg-[#222] border border-gray-700 rounded px-2 py-1 text-center focus:outline-none focus:border-[#B81137]" />
+                </div>
+                <div className="h-px bg-gray-800 w-full my-2"></div>
+                <div className="flex justify-between items-center">
+                  <label className="text-sm text-gray-400">Year Points</label>
+                  <input type="number" min="0" max="100" value={settings.ptsYear} onChange={(e) => setSettings({...settings, ptsYear: parseInt(e.target.value) || 0})} className="w-16 bg-[#222] border border-gray-700 rounded px-2 py-1 text-center focus:outline-none focus:border-[#B81137]" />
+                </div>
+                <div className="flex justify-between items-center">
+                  <label className="text-sm text-gray-400">Title Points</label>
+                  <input type="number" min="0" max="100" value={settings.ptsTitle} onChange={(e) => setSettings({...settings, ptsTitle: parseInt(e.target.value) || 0})} className="w-16 bg-[#222] border border-gray-700 rounded px-2 py-1 text-center focus:outline-none focus:border-[#B81137]" />
+                </div>
+                <div className="flex justify-between items-center">
+                  <label className="text-sm text-gray-400">Artist Points</label>
+                  <input type="number" min="0" max="100" value={settings.ptsArtist} onChange={(e) => setSettings({...settings, ptsArtist: parseInt(e.target.value) || 0})} className="w-16 bg-[#222] border border-gray-700 rounded px-2 py-1 text-center focus:outline-none focus:border-[#B81137]" />
+                </div>
+              </div>
+              <button onClick={() => setShowSettings(false)} className="w-full py-3 bg-gray-800 hover:bg-gray-700 text-white font-bold rounded-xl transition">
+                Done
+              </button>
+            </div>
+          </div>
+        )}
+
         <h2 className="text-4xl font-black mb-2 gem-text uppercase tracking-widest">Carousel Mode</h2>
         <p className="text-sm text-gray-400 mb-8 text-center max-w-sm">
           Enter player names in the order they are seated around the table. Minimum 2, max 12.
@@ -370,8 +451,8 @@ export default function CarouselGame({ playlistId, accessToken, onExit }: { play
             </button>
           )}
         </div>
-        <button onClick={startGame} className="w-full max-w-sm py-4 gem-bg text-white font-bold rounded-xl text-lg active:scale-95 transition">
-          Start Game
+        <button onClick={startGame} disabled={isFetchingTracks} className={`w-full max-w-sm py-4 text-white font-bold rounded-xl text-lg transition ${isFetchingTracks ? 'bg-gray-800 text-gray-500 cursor-not-allowed border border-gray-700' : 'gem-bg active:scale-95 shadow-lg shadow-[#B81137]/20'}`}>
+          {isFetchingTracks ? <span className="flex items-center justify-center gap-2"><Loader2 className="animate-spin" size={20} /> Loading Playlist...</span> : 'Start Game'}
         </button>
       </div>
     );
@@ -467,9 +548,9 @@ export default function CarouselGame({ playlistId, accessToken, onExit }: { play
 
           <div className="flex justify-center gap-6 mb-8">
             {[
-              { type: 'year', icon: Calendar, color: 'text-blue-400', label: 'Year', pts: 5 },
-              { type: 'title', icon: Music, color: 'text-green-400', label: 'Title', pts: 3 },
-              { type: 'artist', icon: Mic2, color: 'text-purple-400', label: 'Artist', pts: 2 }
+              { type: 'year', icon: Calendar, color: 'text-blue-400', label: 'Year', pts: settings.ptsYear },
+              { type: 'title', icon: Music, color: 'text-green-400', label: 'Title', pts: settings.ptsTitle },
+              { type: 'artist', icon: Mic2, color: 'text-purple-400', label: 'Artist', pts: settings.ptsArtist }
             ].map(item => {
               const Icon = item.icon;
               const isAssigned = iconAssignments[item.type as keyof typeof iconAssignments] !== null;
