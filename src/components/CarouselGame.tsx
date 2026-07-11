@@ -17,6 +17,27 @@ interface Player {
   score: number;
 }
 
+const RUBY_COLOR = "#E0115F";
+
+const playErrorSound = () => {
+  try {
+    const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+    if (!AudioContext) return;
+    const ctx = new AudioContext();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(150, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(50, ctx.currentTime + 0.3);
+    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.3);
+  } catch(e) {}
+};
+
 export default function CarouselGame({ playlistId, accessToken, onExit }: { playlistId: string, accessToken: string, onExit: () => void }) {
   const [tracks, setTracks] = useState<Track[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -37,7 +58,8 @@ export default function CarouselGame({ playlistId, accessToken, onExit }: { play
   const [carouselPhase, setCarouselPhase] = useState<'playing' | 'scoring' | 'leaderboard'>('playing');
   const [startingPlayerIndexForSong, setStartingPlayerIndexForSong] = useState(0);
   const [turnsTaken, setTurnsTaken] = useState(1);
-  const [timeLeft, setTimeLeft] = useState(30);
+  const [timeLeft, setTimeLeft] = useState(40);
+  const [isGracePeriod, setIsGracePeriod] = useState(false);
 
   // Scoring state
   const [iconAssignments, setIconAssignments] = useState<{year: string | null, title: string | null, artist: string | null}>({
@@ -49,6 +71,7 @@ export default function CarouselGame({ playlistId, accessToken, onExit }: { play
   const [isHoldingNext, setIsHoldingNext] = useState(false);
   const [isHoldingEnd, setIsHoldingEnd] = useState(false);
   const [isHoldingConfirm, setIsHoldingConfirm] = useState(false);
+  const [isHoldingNextSong, setIsHoldingNextSong] = useState(false);
   const holdTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const activePlayerIndex = (startingPlayerIndexForSong + turnsTaken - 1) % players.length;
@@ -161,7 +184,7 @@ export default function CarouselGame({ playlistId, accessToken, onExit }: { play
     setPlayers(validPlayers);
     setStartingPlayerIndexForSong(Math.floor(Math.random() * validPlayers.length));
     setTurnsTaken(1);
-    setTimeLeft(30);
+    setTimeLeft(40); // 40s for the first player
     initPlayerAndStart();
   };
 
@@ -170,22 +193,32 @@ export default function CarouselGame({ playlistId, accessToken, onExit }: { play
     setCarouselPhase('scoring');
   };
 
+  const moveToNextPlayer = () => {
+    const nextTurns = turnsTaken + 1;
+    setTurnsTaken(nextTurns);
+    setTimeLeft(nextTurns === 1 ? 40 : 30);
+    setIsGracePeriod(true);
+    setTimeout(() => setIsGracePeriod(false), 1000);
+  };
+
   // Timer logic
   useEffect(() => {
     if (status === 'READY' && carouselPhase === 'playing') {
+      if (isGracePeriod) return;
+
       if (timeLeft > 0) {
         const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
         return () => clearTimeout(timer);
       } else {
+        playErrorSound();
         if (!isLastPlayer) {
-          setTurnsTaken(prev => prev + 1);
-          setTimeLeft(30);
+          moveToNextPlayer();
         } else {
           handleReveal();
         }
       }
     }
-  }, [status, carouselPhase, timeLeft, isLastPlayer]);
+  }, [status, carouselPhase, timeLeft, isLastPlayer, isGracePeriod, turnsTaken]);
 
   // Pointer Holds
   const cancelHolds = () => {
@@ -193,6 +226,7 @@ export default function CarouselGame({ playlistId, accessToken, onExit }: { play
     setIsHoldingNext(false);
     setIsHoldingEnd(false);
     setIsHoldingConfirm(false);
+    setIsHoldingNextSong(false);
   };
 
   const holdAction = (setter: any, action: () => void, delay: number) => {
@@ -203,9 +237,10 @@ export default function CarouselGame({ playlistId, accessToken, onExit }: { play
     }, delay);
   };
 
-  const handleNextPlayerDown = (e: React.PointerEvent) => { e.preventDefault(); e.stopPropagation(); holdAction(setIsHoldingNext, () => { setTurnsTaken(prev => prev + 1); setTimeLeft(30); }, 300); };
+  const handleNextPlayerDown = (e: React.PointerEvent) => { e.preventDefault(); e.stopPropagation(); holdAction(setIsHoldingNext, moveToNextPlayer, 300); };
   const handleEndDown = (e: React.PointerEvent) => { e.preventDefault(); e.stopPropagation(); holdAction(setIsHoldingEnd, handleReveal, 600); };
   const handleConfirmDown = (e: React.PointerEvent) => { e.preventDefault(); e.stopPropagation(); holdAction(setIsHoldingConfirm, handleConfirmScoring, 300); };
+  const handleNextSongDown = (e: React.PointerEvent) => { e.preventDefault(); e.stopPropagation(); holdAction(setIsHoldingNextSong, nextSong, 600); };
 
   // Drag and drop
   const handleDragStart = (e: React.PointerEvent, type: 'year'|'title'|'artist') => {
@@ -257,7 +292,7 @@ export default function CarouselGame({ playlistId, accessToken, onExit }: { play
     setCurrentIndex(prev => prev + 1);
     setStartingPlayerIndexForSong(prev => (prev + 1) % players.length);
     setTurnsTaken(1);
-    setTimeLeft(30);
+    setTimeLeft(40); // 40s for first player
     setIconAssignments({ year: null, title: null, artist: null });
     setCarouselPhase('playing');
     if (deviceIdRef.current) await playTrack(currentIndex + 1, deviceIdRef.current);
@@ -266,12 +301,28 @@ export default function CarouselGame({ playlistId, accessToken, onExit }: { play
   // --- RENDERING ---
 
   if (status === 'ERROR') return <div className="flex flex-col items-center justify-center min-h-screen text-red-500 bg-[#0a0a0a]">{errorMsg}</div>;
-  if (status === 'FETCHING' || status === 'INITIALIZING_SDK') return <div className="flex flex-col items-center justify-center min-h-screen text-[#D4AF37] bg-[#0a0a0a]"><Loader2 className="animate-spin w-12 h-12 mb-4" />Loading...</div>;
+  if (status === 'FETCHING' || status === 'INITIALIZING_SDK') return <div className="flex flex-col items-center justify-center min-h-screen text-[#E0115F] bg-[#0a0a0a]"><Loader2 className="animate-spin w-12 h-12 mb-4" />Loading...</div>;
   
   if (status === 'SETUP') {
     return (
       <div className="flex flex-col items-center min-h-[100dvh] pt-12 pb-24 px-6 bg-[#0a0a0a] text-foreground overflow-y-auto touch-pan-y">
-        <h2 className="text-3xl font-bold mb-2 text-[#D4AF37]">Carousel Mode</h2>
+        <style>{`
+          .gem-bg {
+            background-image: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 40%, rgba(0,0,0,0.3) 100%),
+                              linear-gradient(45deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 50%, rgba(0,0,0,0.5) 100%);
+            background-color: #E0115F;
+          }
+          .gem-text {
+            background: linear-gradient(to bottom, #ff4d85, #E0115F);
+            -webkit-background-clip: text;
+            color: transparent;
+          }
+          @keyframes flash {
+            0% { opacity: 0.8; }
+            100% { opacity: 0; }
+          }
+        `}</style>
+        <h2 className="text-4xl font-black mb-2 gem-text uppercase tracking-widest drop-shadow-md">Carousel Mode</h2>
         <p className="text-sm text-gray-400 mb-8 text-center max-w-sm">
           Enter player names in the order they are seated around the table. Minimum 2, max 12.
         </p>
@@ -283,7 +334,7 @@ export default function CarouselGame({ playlistId, accessToken, onExit }: { play
                 value={p.name}
                 onChange={(e) => { const newP = [...players]; newP[i].name = e.target.value; setPlayers(newP); }}
                 placeholder={`Player ${i+1}`}
-                className="flex-1 bg-[#111] border border-gray-800 rounded-lg px-3 py-3 text-white focus:ring-1 focus:ring-[#D4AF37] outline-none"
+                className="flex-1 bg-[#111] border border-gray-800 rounded-lg px-3 py-3 text-white focus:ring-1 focus:ring-[#E0115F] outline-none"
               />
               {players.length > 2 && (
                 <button onClick={() => setPlayers(players.filter(pl => pl.id !== p.id))} className="p-3 text-gray-500 hover:text-red-500">
@@ -295,13 +346,13 @@ export default function CarouselGame({ playlistId, accessToken, onExit }: { play
           {players.length < 12 && (
             <button 
               onClick={() => setPlayers([...players, {id: Date.now().toString(), name: '', score: 0}])}
-              className="flex items-center justify-center gap-2 py-3 mt-2 border border-dashed border-gray-700 rounded-lg text-gray-400 hover:text-[#D4AF37] hover:border-[#D4AF37] transition"
+              className="flex items-center justify-center gap-2 py-3 mt-2 border border-dashed border-gray-700 rounded-lg text-gray-400 hover:text-[#E0115F] hover:border-[#E0115F] transition"
             >
               <Plus size={18} /> Add New
             </button>
           )}
         </div>
-        <button onClick={startGame} className="w-full max-w-sm py-4 bg-[#D4AF37] text-black font-bold rounded-xl text-lg active:scale-95 transition">
+        <button onClick={startGame} className="w-full max-w-sm py-4 gem-bg text-white font-bold rounded-xl text-lg active:scale-95 transition shadow-lg shadow-[#E0115F]/20">
           Start Game
         </button>
       </div>
@@ -317,11 +368,32 @@ export default function CarouselGame({ playlistId, accessToken, onExit }: { play
       onPointerLeave={cancelHolds}
       onPointerCancel={cancelHolds}
     >
-      <div className="absolute top-4 left-4 text-gray-500 text-sm font-mono tracking-widest pointer-events-none mt-2 flex flex-col gap-1">
+      <style>{`
+        .gem-bg {
+          background-image: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 40%, rgba(0,0,0,0.3) 100%),
+                            linear-gradient(45deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 50%, rgba(0,0,0,0.5) 100%);
+          background-color: #E0115F;
+        }
+        .gem-text {
+          background: linear-gradient(to bottom, #ff4d85, #E0115F);
+          -webkit-background-clip: text;
+          color: transparent;
+        }
+        @keyframes flash {
+          0% { opacity: 0.8; }
+          100% { opacity: 0; }
+        }
+      `}</style>
+      
+      {isGracePeriod && (
+        <div className="fixed inset-0 bg-[#E0115F] z-50 animate-[flash_1s_ease-out_forwards] pointer-events-none mix-blend-screen" />
+      )}
+
+      <div className="absolute top-4 left-4 text-gray-500 text-sm font-mono tracking-widest pointer-events-none mt-2 flex flex-col gap-1 z-40">
         <span>{currentIndex + 1} / {tracks.length}</span>
-        <span className="text-xs opacity-50 uppercase">CAROUSEL</span>
+        <span className="text-xs opacity-50 uppercase text-[#E0115F]">CAROUSEL</span>
       </div>
-      <div className="absolute top-4 right-4 z-20 mt-2">
+      <div className="absolute top-4 right-4 z-40 mt-2">
         <button onClick={() => { if(playerRef.current) playerRef.current.disconnect(); onExit(); }} className="text-xs px-3 py-1 border border-gray-700 rounded text-gray-400 hover:bg-gray-800 transition">End Game</button>
       </div>
 
@@ -330,16 +402,16 @@ export default function CarouselGame({ playlistId, accessToken, onExit }: { play
           <div className="mb-12">
             <h3 className="text-xl text-gray-400 tracking-widest uppercase mb-2">Current Player</h3>
             <h2 className="text-5xl font-bold text-white mb-6">{players[activePlayerIndex].name}</h2>
-            <div className={`text-6xl font-mono font-bold ${timeLeft <= 5 ? 'text-red-500 animate-pulse' : 'text-[#D4AF37]'}`}>
+            <div className={`text-6xl font-mono font-bold transition-colors ${timeLeft <= 5 ? 'text-red-500 animate-pulse' : 'text-[#E0115F] drop-shadow-md'}`}>
               00:{timeLeft.toString().padStart(2, '0')}
             </div>
           </div>
           
-          <div className="flex flex-col items-center gap-8 w-full max-w-xs">
+          <div className="flex flex-col items-center gap-8 w-full max-w-xs z-30">
             {!isLastPlayer && (
               <button 
                 onPointerDown={handleNextPlayerDown}
-                className="relative w-full py-6 rounded-2xl bg-[#1a1a1a] border border-gray-800 overflow-hidden active:scale-95 transition-transform"
+                className="relative w-full py-6 rounded-2xl bg-[#1a1a1a] border border-[#E0115F]/30 overflow-hidden active:scale-95 transition-transform shadow-lg"
               >
                 <div className="absolute left-0 top-0 bottom-0 bg-white/10 transition-all ease-linear" style={{ width: isHoldingNext ? '100%' : '0%', transitionDuration: isHoldingNext ? '300ms' : '150ms' }} />
                 <span className="relative z-10 font-bold text-xl text-white tracking-widest uppercase">Next Player</span>
@@ -347,10 +419,10 @@ export default function CarouselGame({ playlistId, accessToken, onExit }: { play
             )}
             <button 
               onPointerDown={handleEndDown}
-              className="relative w-full py-6 rounded-2xl bg-[#D4AF37]/10 border border-[#D4AF37]/50 overflow-hidden active:scale-95 transition-transform"
+              className="relative w-full py-6 rounded-2xl gem-bg overflow-hidden active:scale-95 transition-transform shadow-xl shadow-[#E0115F]/20"
             >
-              <div className="absolute left-0 top-0 bottom-0 bg-[#D4AF37] transition-all ease-linear" style={{ width: isHoldingEnd ? '100%' : '0%', transitionDuration: isHoldingEnd ? '600ms' : '150ms' }} />
-              <span className={`relative z-10 font-bold text-xl tracking-widest uppercase ${isHoldingEnd ? 'text-black' : 'text-[#D4AF37]'}`}>End & Reveal</span>
+              <div className="absolute left-0 top-0 bottom-0 bg-white/30 transition-all ease-linear" style={{ width: isHoldingEnd ? '100%' : '0%', transitionDuration: isHoldingEnd ? '600ms' : '150ms' }} />
+              <span className={`relative z-10 font-bold text-xl tracking-widest uppercase text-white`}>End & Reveal</span>
             </button>
           </div>
         </div>
@@ -359,7 +431,7 @@ export default function CarouselGame({ playlistId, accessToken, onExit }: { play
       {carouselPhase === 'scoring' && (
         <div className="flex-1 flex flex-col items-center justify-start pt-20 px-4 w-full h-full overflow-hidden">
           <h2 className="text-2xl font-bold text-white text-center mb-1">{tracks[currentIndex].name}</h2>
-          <p className="text-[#D4AF37] text-lg text-center mb-1">{tracks[currentIndex].artists.map(a => a.name).join(', ')}</p>
+          <p className="gem-text text-lg text-center mb-1 font-medium">{tracks[currentIndex].artists.map(a => a.name).join(', ')}</p>
           <p className="text-gray-400 text-sm text-center mb-8">{originalYear}</p>
 
           <p className="text-xs text-gray-500 uppercase tracking-widest mb-4">Drag icons to the winning players</p>
@@ -392,11 +464,11 @@ export default function CarouselGame({ playlistId, accessToken, onExit }: { play
             })}
           </div>
 
-          <div className="w-full max-w-md flex-1 overflow-y-auto flex flex-col gap-3 pb-24">
+          <div className="w-full max-w-md flex-1 overflow-y-auto flex flex-col gap-3 pb-24 z-20">
             {players.map(p => {
               const pIcons = Object.entries(iconAssignments).filter(([_, id]) => id === p.id).map(([type]) => type);
               return (
-                <div key={p.id} data-player-id={p.id} className="player-dropzone flex items-center justify-between p-4 rounded-xl bg-[#111] border-2 border-transparent transition-colors">
+                <div key={p.id} data-player-id={p.id} className="player-dropzone flex items-center justify-between p-4 rounded-xl bg-[#111] border-2 border-[#E0115F]/0 hover:border-[#E0115F]/30 transition-colors">
                   <span className="text-white font-medium">{p.name}</span>
                   <div className="flex gap-2 min-h-[32px] min-w-[32px]">
                     {pIcons.map(type => {
@@ -410,38 +482,41 @@ export default function CarouselGame({ playlistId, accessToken, onExit }: { play
             })}
           </div>
           
-          <div className="absolute bottom-6 left-0 right-0 px-6 flex justify-center pointer-events-auto">
+          <div className="absolute bottom-6 left-0 right-0 px-6 flex justify-center pointer-events-auto z-30">
             <button 
               onPointerDown={handleConfirmDown}
-              className="relative w-full max-w-xs py-4 rounded-full bg-[#D4AF37] border border-[#D4AF37] overflow-hidden active:scale-95 transition-transform"
+              className="relative w-full max-w-xs py-4 rounded-full gem-bg overflow-hidden active:scale-95 transition-transform shadow-lg shadow-[#E0115F]/20"
             >
-              <div className="absolute left-0 top-0 bottom-0 bg-white/40 transition-all ease-linear" style={{ width: isHoldingConfirm ? '100%' : '0%', transitionDuration: isHoldingConfirm ? '300ms' : '150ms' }} />
-              <span className="relative z-10 font-bold text-lg text-black tracking-widest uppercase">Confirm Points</span>
+              <div className="absolute left-0 top-0 bottom-0 bg-white/30 transition-all ease-linear" style={{ width: isHoldingConfirm ? '100%' : '0%', transitionDuration: isHoldingConfirm ? '300ms' : '150ms' }} />
+              <span className="relative z-10 font-bold text-lg text-white tracking-widest uppercase">Confirm Points</span>
             </button>
           </div>
         </div>
       )}
 
       {carouselPhase === 'leaderboard' && (
-        <div className="flex-1 flex flex-col items-center justify-center pt-20 px-6 w-full">
-          <Trophy className="w-16 h-16 text-[#D4AF37] mb-6" />
+        <div className="flex-1 flex flex-col items-center justify-center pt-20 px-6 w-full z-30">
+          <Trophy className="w-16 h-16 text-[#E0115F] mb-6 drop-shadow-md" />
           <h2 className="text-3xl font-bold text-white tracking-widest uppercase mb-8">Leaderboard</h2>
           
           <div className="w-full max-w-sm flex flex-col gap-3 mb-12 flex-1 overflow-y-auto">
             {players.map((p, i) => (
-              <div key={p.id} className="flex items-center p-4 rounded-xl bg-[#111] border border-gray-800">
-                <span className={`w-8 text-lg font-bold ${i === 0 ? 'text-[#D4AF37]' : i === 1 ? 'text-gray-300' : i === 2 ? 'text-amber-600' : 'text-gray-600'}`}>#{i+1}</span>
+              <div key={p.id} className="flex items-center p-4 rounded-xl bg-[#111] border border-[#E0115F]/20 shadow-sm">
+                <span className={`w-8 text-lg font-bold ${i === 0 ? 'text-[#E0115F]' : i === 1 ? 'text-gray-300' : i === 2 ? 'text-amber-600' : 'text-gray-600'}`}>#{i+1}</span>
                 <span className="flex-1 text-white text-lg font-medium">{p.name}</span>
-                <span className="text-[#D4AF37] font-bold text-xl">{p.score} <span className="text-xs text-gray-500">pts</span></span>
+                <span className="gem-text font-bold text-xl">{p.score} <span className="text-xs text-gray-500">pts</span></span>
               </div>
             ))}
           </div>
 
           <button 
-            onClick={nextSong}
-            className="w-full max-w-sm py-5 rounded-xl bg-gray-800 text-white font-bold text-lg flex items-center justify-center gap-3 active:scale-95 transition hover:bg-gray-700 mb-8"
+            onPointerDown={handleNextSongDown}
+            className="relative w-full max-w-sm py-5 rounded-xl bg-gray-800 border border-gray-700 overflow-hidden active:scale-95 transition-transform mb-8 shadow-md"
           >
-            <SkipForward className="fill-current" /> Next Song
+            <div className="absolute left-0 top-0 bottom-0 bg-[#E0115F] transition-all ease-linear" style={{ width: isHoldingNextSong ? '100%' : '0%', transitionDuration: isHoldingNextSong ? '600ms' : '150ms' }} />
+            <span className="relative z-10 font-bold text-lg text-white flex items-center justify-center gap-3 tracking-widest uppercase">
+              <SkipForward className="fill-current" /> Next Song
+            </span>
           </button>
         </div>
       )}
