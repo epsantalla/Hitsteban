@@ -11,16 +11,24 @@ export interface PlaylistTracksState {
 /**
  * Load (and shuffle) a playlist's playable tracks once per `playlistId`/token.
  * Shared by every game so playlist fetching lives in exactly one place.
+ *
+ * When `initialTracks` is provided (a resumed game already has its shuffled
+ * order), those are used as-is and the Spotify fetch is skipped entirely.
  */
 export function usePlaylistTracks(
   playlistId: string,
-  accessToken: string
+  accessToken: string,
+  initialTracks?: Track[]
 ): PlaylistTracksState {
-  const [tracks, setTracks] = useState<Track[]>([]);
-  const [loading, setLoading] = useState(true);
+  const hasInitial = !!initialTracks && initialTracks.length > 0;
+  const [tracks, setTracks] = useState<Track[]>(initialTracks ?? []);
+  const [loading, setLoading] = useState(!hasInitial);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    // Resumed game: reuse the saved order, no need to hit Spotify.
+    if (hasInitial) return;
+
     let isMounted = true;
     setLoading(true);
     setError(null);

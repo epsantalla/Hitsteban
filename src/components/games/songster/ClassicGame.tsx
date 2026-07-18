@@ -6,12 +6,29 @@ import { AVAILABLE_MODES } from "./modes";
 import { usePlaylistTracks } from "@/hooks/usePlaylistTracks";
 import { useOriginalYear } from "@/hooks/useOriginalYear";
 import { useSpotifyPlayer } from "@/hooks/useSpotifyPlayer";
+import { Track } from "@/lib/spotify/types";
 
-export default function ClassicGame({ playlistId, accessToken, mode, onExit }: { playlistId: string, accessToken: string, mode: string, onExit: () => void }) {
-  const { tracks, loading, error: loadError } = usePlaylistTracks(playlistId, accessToken);
+interface ClassicInitialState {
+  currentIndex: number;
+  tracks: Track[];
+}
+
+export default function ClassicGame({ playlistId, accessToken, mode, onExit, initialState, onProgress, onComplete }: {
+  playlistId: string,
+  accessToken: string,
+  mode: string,
+  onExit: () => void,
+  /** When resuming, the saved track order + position to restore. */
+  initialState?: ClassicInitialState,
+  /** Reports resumable progress on each checkpoint (auto-save). */
+  onProgress?: (progress: ClassicInitialState) => void,
+  /** Called when the playlist is played to the end (natural completion). */
+  onComplete?: () => void,
+}) {
+  const { tracks, loading, error: loadError } = usePlaylistTracks(playlistId, accessToken, initialState?.tracks);
   const player = useSpotifyPlayer(accessToken, "Guess the Song Player");
 
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [currentIndex, setCurrentIndex] = useState(initialState?.currentIndex ?? 0);
   const [phase, setPhase] = useState<'READY_TO_START' | 'INITIALIZING_SDK' | 'PLAYING'>('READY_TO_START');
   const [playerError, setPlayerError] = useState<string | null>(null);
   const [revealState, setRevealState] = useState<'HIDDEN' | 'REVEALED'>('HIDDEN');
@@ -32,7 +49,8 @@ export default function ClassicGame({ playlistId, accessToken, mode, onExit }: {
   const startGame = () => {
     setPhase('INITIALIZING_SDK');
     player.init({
-      onReady: () => goToTrack(0),
+      // Resumes at the saved position (0 for a fresh game).
+      onReady: () => goToTrack(currentIndex),
       onError: (message) => setPlayerError(message),
     });
   };
@@ -41,6 +59,15 @@ export default function ClassicGame({ playlistId, accessToken, mode, onExit }: {
     player.disconnect();
     onExit();
   };
+
+  // Auto-save progress once actually playing (so merely opening a playlist
+  // doesn't create a resumable game). Resets are handled by the parent.
+  useEffect(() => {
+    if (phase === 'PLAYING' && tracks.length > 0) {
+      onProgress?.({ currentIndex, tracks });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentIndex, phase, tracks]);
 
   const [isHolding, setIsHolding] = useState(false);
   const holdTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -63,6 +90,7 @@ export default function ClassicGame({ playlistId, accessToken, mode, onExit }: {
           setRevealState('HIDDEN');
           await goToTrack(nextIndex);
         } else {
+          onComplete?.();
           handleExit();
         }
       }
@@ -104,15 +132,18 @@ export default function ClassicGame({ playlistId, accessToken, mode, onExit }: {
   }
 
   if (phase === 'READY_TO_START') {
+    const resuming = !!initialState;
     return (
       <div className="flex flex-col items-center justify-center min-h-screen p-6 text-center bg-[#0a0a0a] text-foreground">
-        <h2 className="text-3xl font-bold mb-8 text-white">{tracks.length} Tracks Loaded</h2>
+        <h2 className="text-3xl font-bold mb-8 text-white">
+          {resuming ? `Resume · track ${currentIndex + 1}/${tracks.length}` : `${tracks.length} Tracks Loaded`}
+        </h2>
         <button
           onClick={startGame}
           className="flex items-center gap-3 px-10 py-5 bg-[#D4AF37] hover:bg-[#b8952b] text-black rounded-full font-bold text-xl shadow-xl shadow-[#D4AF37]/20 transition-all active:scale-95"
         >
           <Play className="fill-current" />
-          Start Game
+          {resuming ? 'Continue' : 'Start Game'}
         </button>
       </div>
     );

@@ -6,6 +6,14 @@ import { Playfair_Display } from "next/font/google";
 import ClassicGame from "./ClassicGame";
 import CarouselGame from "./CarouselGame";
 import { AVAILABLE_MODES } from "./modes";
+import { loadSavedGame, saveSavedGame, clearSavedGame, SavedGame } from "@/lib/savedGame";
+import {
+  SONGSTER_GAME_ID,
+  SONGSTER_SAVE_VERSION,
+  SongsterSavedState,
+  SongsterProgress,
+  buildSongsterLabel,
+} from "./savedState";
 
 const playfair = Playfair_Display({ subsets: ["latin"] });
 
@@ -23,11 +31,71 @@ export default function Songster({ onExit }: { onExit: () => void }) {
   const [userPlaylists, setUserPlaylists] = useState<any[]>([]);
   const [selectedMode, setSelectedMode] = useState(AVAILABLE_MODES[0].id);
 
+  // A previously saved, resumable game (or null). Refreshed whenever we return
+  // to the setup screen so the resume card always reflects the current save.
+  const [resume, setResume] = useState<SavedGame<SongsterSavedState> | null>(null);
+  // The state to hydrate the mode with when resuming (null for a fresh game).
+  const [resumeState, setResumeState] = useState<SongsterSavedState | null>(null);
+
   useEffect(() => {
     if ((session as any)?.error === "RefreshAccessTokenError") {
       signIn("spotify");
     }
   }, [session]);
+
+  // Read the saved game on mount and every time we come back to setup.
+  // (localStorage is client-only, so we read it in an effect, not during render.)
+  useEffect(() => {
+    if (isGameStarted) return;
+    const saved = loadSavedGame();
+    setResume(
+      saved && saved.gameId === SONGSTER_GAME_ID && saved.version === SONGSTER_SAVE_VERSION
+        ? (saved as SavedGame<SongsterSavedState>)
+        : null
+    );
+  }, [isGameStarted]);
+
+  // Resume the saved game: restore playlist + mode, and pass the saved state
+  // down to the mode component to hydrate from.
+  const handleResume = () => {
+    if (!resume) return;
+    const state = resume.state;
+    setPlaylistId(state.playlistId);
+    setSelectedMode(state.mode);
+    setResumeState(state);
+    setIsGameStarted(true);
+  };
+
+  const handleDiscard = () => {
+    clearSavedGame();
+    setResume(null);
+  };
+
+  // Auto-save callback handed to the mode. The mode reports its own progress;
+  // Songster owns `gameId`/`mode`/`playlistId` and wraps it into a full save.
+  const handleProgress = (progress: SongsterProgress) => {
+    const state: SongsterSavedState = {
+      mode: selectedMode,
+      playlistId,
+      currentIndex: progress.currentIndex,
+      tracks: progress.tracks,
+      carousel: progress.carousel,
+    };
+    saveSavedGame({
+      gameId: SONGSTER_GAME_ID,
+      version: SONGSTER_SAVE_VERSION,
+      savedAt: Date.now(),
+      label: buildSongsterLabel(state),
+      state,
+    });
+  };
+
+  // Natural completion — nothing left to resume.
+  const handleComplete = () => {
+    clearSavedGame();
+    setResume(null);
+    setResumeState(null);
+  };
 
   useEffect(() => {
     if (session?.accessToken) {
@@ -82,9 +150,42 @@ export default function Songster({ onExit }: { onExit: () => void }) {
 
   if (isGameStarted && session.accessToken) {
     if (selectedMode === "carousel") {
-      return <CarouselGame playlistId={playlistId} accessToken={session.accessToken} onExit={() => setIsGameStarted(false)} />;
+      const carouselResume =
+        resumeState && resumeState.mode === "carousel" && resumeState.carousel
+          ? {
+              currentIndex: resumeState.currentIndex,
+              tracks: resumeState.tracks,
+              players: resumeState.carousel.players,
+              settings: resumeState.carousel.settings,
+              startingPlayerIndexForSong: resumeState.carousel.startingPlayerIndexForSong,
+            }
+          : undefined;
+      return (
+        <CarouselGame
+          playlistId={playlistId}
+          accessToken={session.accessToken}
+          onExit={() => setIsGameStarted(false)}
+          initialState={carouselResume}
+          onProgress={handleProgress}
+          onComplete={handleComplete}
+        />
+      );
     }
-    return <ClassicGame playlistId={playlistId} accessToken={session.accessToken} mode={selectedMode} onExit={() => setIsGameStarted(false)} />;
+    const classicResume =
+      resumeState && resumeState.mode !== "carousel"
+        ? { currentIndex: resumeState.currentIndex, tracks: resumeState.tracks }
+        : undefined;
+    return (
+      <ClassicGame
+        playlistId={playlistId}
+        accessToken={session.accessToken}
+        mode={selectedMode}
+        onExit={() => setIsGameStarted(false)}
+        initialState={classicResume}
+        onProgress={handleProgress}
+        onComplete={handleComplete}
+      />
+    );
   }
 
   const isCarousel = selectedMode === "carousel";
@@ -114,6 +215,7 @@ export default function Songster({ onExit }: { onExit: () => void }) {
     }
 
     setPlaylistId(finalId);
+    setResumeState(null); // fresh game — don't inherit any saved state
     setIsGameStarted(true);
   };
 
@@ -140,6 +242,29 @@ export default function Songster({ onExit }: { onExit: () => void }) {
         <h1 className={`${playfair.className} text-5xl font-black mb-8 text-center bg-clip-text text-transparent bg-gradient-to-r ${theme.gradient} drop-shadow-sm transition-all duration-500`}>
           Songster
         </h1>
+
+        {resume && (
+          <div className="mb-8 p-4 rounded-xl bg-[#111] border border-[#BF953F]/40 shadow-lg shadow-black/40">
+            <p className="text-xs uppercase tracking-widest text-gray-500 mb-1">Game in progress</p>
+            <p className="text-white font-medium mb-4">{resume.label}</p>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={handleResume}
+                className="flex-1 py-3 rounded-lg bg-gradient-to-r from-[#BF953F] via-[#FCF6BA] to-[#B38728] text-black font-bold transition-all hover:scale-[1.02] active:scale-95"
+              >
+                Resume
+              </button>
+              <button
+                type="button"
+                onClick={handleDiscard}
+                className="px-4 py-3 rounded-lg border border-gray-700 text-gray-400 hover:text-white hover:bg-gray-800 transition"
+              >
+                Discard
+              </button>
+            </div>
+          </div>
+        )}
 
         <form onSubmit={handleStart} className="w-full flex flex-col gap-6">
           <div className="flex flex-col gap-2">
@@ -214,6 +339,7 @@ export default function Songster({ onExit }: { onExit: () => void }) {
                   key={playlist.id}
                   onClick={() => {
                     setPlaylistId(playlist.id);
+                    setResumeState(null); // fresh game — don't inherit any saved state
                     setIsGameStarted(true);
                   }}
                   className="flex-shrink-0 w-28 flex flex-col items-center gap-3 snap-center group text-left transition-transform active:scale-95"

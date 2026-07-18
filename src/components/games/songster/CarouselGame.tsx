@@ -5,11 +5,15 @@ import { Loader2, Music, Calendar, Mic2, Plus, X, Trophy, SkipForward, Settings 
 import { usePlaylistTracks } from "@/hooks/usePlaylistTracks";
 import { useOriginalYear } from "@/hooks/useOriginalYear";
 import { useSpotifyPlayer } from "@/hooks/useSpotifyPlayer";
+import { Track } from "@/lib/spotify/types";
+import { Player, CarouselSettings, CarouselSavedState } from "./savedState";
 
-interface Player {
-  id: string;
-  name: string;
-  score: number;
+interface CarouselInitialState {
+  currentIndex: number;
+  tracks: Track[];
+  players: Player[];
+  settings: CarouselSettings;
+  startingPlayerIndexForSong: number;
 }
 
 const playErrorSound = () => {
@@ -36,11 +40,21 @@ const playErrorSound = () => {
   } catch(e) {}
 };
 
-export default function CarouselGame({ playlistId, accessToken, onExit }: { playlistId: string, accessToken: string, onExit: () => void }) {
-  const { tracks, loading: isFetchingTracks, error: loadError } = usePlaylistTracks(playlistId, accessToken);
+export default function CarouselGame({ playlistId, accessToken, onExit, initialState, onProgress, onComplete }: {
+  playlistId: string,
+  accessToken: string,
+  onExit: () => void,
+  /** When resuming, the saved track order, players, scores and settings to restore. */
+  initialState?: CarouselInitialState,
+  /** Reports resumable progress on each checkpoint (auto-save). */
+  onProgress?: (progress: { currentIndex: number; tracks: Track[]; carousel: CarouselSavedState }) => void,
+  /** Called when the last song is finished (natural completion). */
+  onComplete?: () => void,
+}) {
+  const { tracks, loading: isFetchingTracks, error: loadError } = usePlaylistTracks(playlistId, accessToken, initialState?.tracks);
   const player = useSpotifyPlayer(accessToken, "Songster Carousel");
 
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [currentIndex, setCurrentIndex] = useState(initialState?.currentIndex ?? 0);
   const [status, setStatus] = useState<'SETUP' | 'INITIALIZING_SDK' | 'READY'>('SETUP');
   const [playerError, setPlayerError] = useState<string | null>(null);
   const originalYear = useOriginalYear(tracks[currentIndex], accessToken);
@@ -48,18 +62,18 @@ export default function CarouselGame({ playlistId, accessToken, onExit }: { play
   const errorMsg = loadError || playerError;
 
   // Game state
-  const [players, setPlayers] = useState<Player[]>([
+  const [players, setPlayers] = useState<Player[]>(initialState?.players ?? [
     { id: '1', name: '', score: 0 },
     { id: '2', name: '', score: 0 }
   ]);
   const [carouselPhase, setCarouselPhase] = useState<'intro' | 'playing' | 'scoring' | 'leaderboard'>('intro');
-  const [startingPlayerIndexForSong, setStartingPlayerIndexForSong] = useState(0);
+  const [startingPlayerIndexForSong, setStartingPlayerIndexForSong] = useState(initialState?.startingPlayerIndexForSong ?? 0);
   const [turnsTaken, setTurnsTaken] = useState(1);
-  const [timeLeft, setTimeLeft] = useState(40);
+  const [timeLeft, setTimeLeft] = useState(initialState?.settings.initialTime ?? 40);
   const [isGracePeriod, setIsGracePeriod] = useState(false);
 
   // Settings
-  const [settings, setSettings] = useState({
+  const [settings, setSettings] = useState<CarouselSettings>(initialState?.settings ?? {
     initialTime: 40,
     turnTime: 30,
     ptsYear: 5,
@@ -111,6 +125,34 @@ export default function CarouselGame({ playlistId, accessToken, onExit }: { play
     setTimeLeft(settings.initialTime); // configured initial time
     initPlayerAndStart();
   };
+
+  // Resume a saved game: players/scores/settings/whose-song are already
+  // hydrated from `initialState`, so — unlike startGame — we keep them and just
+  // restart the current song's turn cycle (timer/scoring reset per the design).
+  const resumeGame = () => {
+    if (isFetchingTracks) return;
+    setTurnsTaken(1);
+    setTimeLeft(settings.initialTime);
+    setIconAssignments({ year: null, title: null, artist: null });
+    setSelectedIconToAssign(null);
+    setCarouselPhase('intro');
+    initPlayerAndStart();
+  };
+
+  // Auto-save at stable checkpoints (song change, score confirm, settings).
+  // Only once the game is actually running, and deliberately excluding the
+  // per-second timer and the current song's in-progress turn/scoring state,
+  // which resume does not restore.
+  useEffect(() => {
+    if (status === 'READY') {
+      onProgress?.({
+        currentIndex,
+        tracks,
+        carousel: { players, settings, startingPlayerIndexForSong },
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentIndex, players, settings, startingPlayerIndexForSong, status]);
 
   // Intro logic: Wait 2s, then play music and transition to playing phase
   useEffect(() => {
@@ -223,6 +265,7 @@ export default function CarouselGame({ playlistId, accessToken, onExit }: { play
   const nextSong = () => {
     player.pause();
     if (currentIndex + 1 >= tracks.length) {
+      onComplete?.();
       onExit(); return;
     }
     setCurrentIndex(prev => prev + 1);
@@ -238,6 +281,55 @@ export default function CarouselGame({ playlistId, accessToken, onExit }: { play
 
   if (errorMsg) return <div className="flex flex-col items-center justify-center min-h-screen text-red-500 bg-[#0a0a0a]">{errorMsg}</div>;
   if (status === 'INITIALIZING_SDK') return <div className="flex flex-col items-center justify-center min-h-screen text-[#B81137] bg-[#0a0a0a]"><Loader2 className="animate-spin w-12 h-12 mb-4" />Loading...</div>;
+
+  // Resume screen: skip name entry, keep the saved players/scores, and continue
+  // the current song. Playback can't auto-start, so we still need this tap.
+  if (status === 'SETUP' && initialState) {
+    return (
+      <div className="flex flex-col items-center min-h-[100dvh] pt-12 pb-24 px-6 bg-[#0a0a0a] text-foreground overflow-y-auto touch-pan-y relative">
+        <style>{`
+          .gem-bg {
+            background: linear-gradient(135deg, #FF2A55 0%, #B81137 50%, #7A0B22 100%);
+            box-shadow: inset 0px 5px 15px rgba(255, 255, 255, 0.4),
+                        inset 0px -5px 15px rgba(0, 0, 0, 0.5),
+                        0px 8px 25px rgba(184, 17, 55, 0.5);
+            border: 2px solid #FF4D79;
+          }
+          .gem-text {
+            background: linear-gradient(to bottom, #FF4D79, #B81137);
+            -webkit-background-clip: text;
+            color: transparent;
+            text-shadow: 0px 2px 10px rgba(184, 17, 55, 0.4);
+          }
+        `}</style>
+
+        <div className="absolute top-4 left-4 z-40">
+          <button onClick={onExit} className="text-sm px-4 py-2 border border-gray-700 rounded text-gray-400 hover:text-white hover:bg-gray-800 transition">
+            &larr; Menu
+          </button>
+        </div>
+
+        <h2 className="text-4xl font-black mb-2 gem-text uppercase tracking-widest mt-4">Resume Carousel</h2>
+        <p className="text-sm text-gray-400 mb-8 text-center max-w-sm">
+          Song {Math.min(currentIndex + 1, tracks.length)} of {tracks.length} · current standings
+        </p>
+
+        <div className="w-full max-w-sm flex flex-col gap-3 mb-8">
+          {[...players].sort((a, b) => b.score - a.score).map((p, i) => (
+            <div key={p.id} className="flex items-center p-4 rounded-xl bg-[#111] border border-[#B81137]/20 overflow-hidden">
+              <span className={`w-10 text-2xl font-black ${i === 0 ? 'text-[#B81137]' : i === 1 ? 'text-gray-300' : i === 2 ? 'text-amber-700' : 'text-gray-600'}`}>#{i + 1}</span>
+              <span className="flex-1 text-white text-lg font-medium truncate pr-2">{p.name}</span>
+              <span className="gem-text font-bold text-xl flex-shrink-0">{p.score} <span className="text-sm text-gray-500">pts</span></span>
+            </div>
+          ))}
+        </div>
+
+        <button onClick={resumeGame} disabled={isFetchingTracks} className={`w-full max-w-sm py-4 text-white font-bold rounded-xl text-lg transition ${isFetchingTracks ? 'bg-gray-800 text-gray-500 cursor-not-allowed border border-gray-700' : 'gem-bg active:scale-95 shadow-lg shadow-[#B81137]/20'}`}>
+          {isFetchingTracks ? <span className="flex items-center justify-center gap-2"><Loader2 className="animate-spin" size={20} /> Loading Playlist...</span> : 'Continue Game'}
+        </button>
+      </div>
+    );
+  }
 
   if (status === 'SETUP') {
     return (
