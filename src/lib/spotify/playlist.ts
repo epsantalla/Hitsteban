@@ -29,15 +29,15 @@ export async function loadPlaylistTracks(
     `https://api.spotify.com/v1/playlists/${playlistId}/items?limit=100&additional_types=track`;
 
   while (url) {
-    const res = await fetch(url, {
+    const res: Response = await fetch(url, {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
     if (!res.ok) {
-      const errorData = await res.json().catch(() => ({}));
+      const errorData: any = await res.json().catch(() => ({}));
       const spotifyError = errorData.error?.message || res.statusText;
       throw new Error(`Spotify API Error: ${spotifyError}`);
     }
-    const data = await res.json();
+    const data: any = await res.json();
     const validTracks: Track[] = (data.items || [])
       .map((item: any) => item.track || item.item)
       .filter(
@@ -45,7 +45,7 @@ export async function loadPlaylistTracks(
           t && t.uri && t.type === "track" && t.is_playable !== false && !t.is_local
       );
     allTracks = [...allTracks, ...validTracks];
-    url = data.next;
+    url = data.next as string | null;
   }
 
   if (allTracks.length === 0) {
