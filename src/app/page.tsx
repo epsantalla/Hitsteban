@@ -4,6 +4,7 @@ import { useSession, signIn, signOut } from "next-auth/react";
 import { useState, useEffect } from "react";
 import Game from "@/components/Game";
 import CarouselGame from "@/components/CarouselGame";
+import MainMenu from "@/components/MainMenu";
 import { Playfair_Display } from "next/font/google";
 import { AVAILABLE_MODES } from "@/lib/modes";
 
@@ -15,6 +16,7 @@ export default function Home() {
   const [isGameStarted, setIsGameStarted] = useState(false);
   const [userPlaylists, setUserPlaylists] = useState<any[]>([]);
   const [selectedMode, setSelectedMode] = useState(AVAILABLE_MODES[0].id);
+  const [selectedGame, setSelectedGame] = useState<string | null>(null);
 
   useEffect(() => {
     if ((session as any)?.error === "RefreshAccessTokenError") {
@@ -61,6 +63,10 @@ export default function Home() {
     );
   }
 
+  if (!selectedGame) {
+    return <MainMenu onSelectGame={setSelectedGame} onSignOut={() => signOut()} />;
+  }
+
   if (isGameStarted && session.accessToken) {
     if (selectedMode === "carousel") {
       return <CarouselGame playlistId={playlistId} accessToken={session.accessToken} onExit={() => setIsGameStarted(false)} />;
@@ -100,8 +106,16 @@ export default function Home() {
 
   return (
     <main className="flex h-[100dvh] overflow-hidden flex-col items-center justify-center p-6 bg-[#0a0a0a] text-foreground w-full">
+      <div className="absolute top-4 left-4">
+        <button
+          onClick={() => setSelectedGame(null)}
+          className="text-sm px-4 py-2 border border-gray-600 rounded-md text-gray-400 hover:text-white hover:bg-gray-800 transition"
+        >
+          &larr; Menu
+        </button>
+      </div>
       <div className="absolute top-4 right-4">
-        <button 
+        <button
           onClick={() => signOut()}
           className="text-sm px-4 py-2 border border-gray-600 rounded-md text-gray-400 hover:text-white hover:bg-gray-800 transition"
         >
