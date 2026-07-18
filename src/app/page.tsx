@@ -68,6 +68,18 @@ export default function Home() {
     return <Game playlistId={playlistId} accessToken={session.accessToken} mode={selectedMode} onExit={() => setIsGameStarted(false)} />;
   }
 
+  const isCarousel = selectedMode === "carousel";
+  const theme = {
+    gradient: isCarousel ? "from-[#FF2A55] via-[#B81137] to-[#7A0B22]" : "from-[#BF953F] via-[#FCF6BA] to-[#B38728]",
+    text: isCarousel ? "text-[#FF2A55]" : "text-[#BF953F]",
+    text80: isCarousel ? "text-[#FF2A55]/80" : "text-[#BF953F]/80",
+    ring: isCarousel ? "focus:ring-[#FF2A55]" : "focus:ring-[#BF953F]",
+    shadow: isCarousel ? "shadow-[#FF2A55]/20" : "shadow-[#BF953F]/20",
+    hoverShadow: isCarousel ? "hover:shadow-[#FF2A55]/40" : "hover:shadow-[#BF953F]/40",
+    hoverBorder: isCarousel ? "group-hover:border-[#FF2A55]" : "group-hover:border-[#BF953F]",
+    buttonText: isCarousel ? "text-white" : "text-black",
+  };
+
   const handleStart = (e: React.FormEvent) => {
     e.preventDefault();
     if (!playlistId.trim()) return;
@@ -98,13 +110,13 @@ export default function Home() {
       </div>
 
       <div className="w-full max-w-md mx-auto">
-        <h1 className={`${playfair.className} text-5xl font-black mb-8 text-center bg-clip-text text-transparent bg-gradient-to-r from-[#BF953F] via-[#FCF6BA] to-[#B38728] drop-shadow-sm`}>
+        <h1 className={`${playfair.className} text-5xl font-black mb-8 text-center bg-clip-text text-transparent bg-gradient-to-r ${theme.gradient} drop-shadow-sm transition-all duration-500`}>
           Hitsteban
         </h1>
         
         <form onSubmit={handleStart} className="w-full flex flex-col gap-6">
           <div className="flex flex-col gap-2">
-            <label htmlFor="mode" className="text-sm text-[#BF953F]/80 font-medium">
+            <label htmlFor="mode" className={`text-sm ${theme.text80} font-medium transition-colors duration-500`}>
               Game Mode
             </label>
             <div className="relative">
@@ -112,7 +124,7 @@ export default function Home() {
                 id="mode"
                 value={selectedMode}
                 onChange={(e) => setSelectedMode(e.target.value)}
-                className="w-full px-4 py-4 bg-[#111] border border-gray-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#BF953F] text-white shadow-inner appearance-none cursor-pointer"
+                className={`w-full px-4 py-4 bg-[#111] border border-gray-800 rounded-xl focus:outline-none focus:ring-2 ${theme.ring} text-white shadow-inner appearance-none cursor-pointer transition-shadow duration-500`}
               >
                 {AVAILABLE_MODES.map(mode => (
                   <option key={mode.id} value={mode.id}>
@@ -132,7 +144,7 @@ export default function Home() {
           </div>
 
           <div className="flex flex-col gap-2">
-            <label htmlFor="playlist" className="text-sm text-[#BF953F]/80 font-medium">
+            <label htmlFor="playlist" className={`text-sm ${theme.text80} font-medium transition-colors duration-500`}>
               Spotify Playlist ID
             </label>
             <input
@@ -141,7 +153,7 @@ export default function Home() {
               placeholder="e.g. 37i9dQZF1DXcBWIGoYBM5M"
               value={playlistId}
               onChange={(e) => setPlaylistId(e.target.value)}
-              className="px-4 py-4 bg-[#111] border border-gray-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#BF953F] text-white placeholder-gray-600 shadow-inner"
+              className={`px-4 py-4 bg-[#111] border border-gray-800 rounded-xl focus:outline-none focus:ring-2 ${theme.ring} text-white placeholder-gray-600 shadow-inner transition-shadow duration-500`}
               required
             />
             <p className="text-xs text-gray-500 mt-1">
@@ -151,7 +163,7 @@ export default function Home() {
           
           <button
             type="submit"
-            className="w-full py-4 bg-gradient-to-r from-[#BF953F] via-[#FCF6BA] to-[#B38728] text-black rounded-xl font-bold text-lg shadow-xl shadow-[#BF953F]/20 hover:shadow-[#BF953F]/40 hover:scale-[1.02] transition-all active:scale-95"
+            className={`w-full py-4 bg-gradient-to-r ${theme.gradient} ${theme.buttonText} rounded-xl font-bold text-lg shadow-xl ${theme.shadow} ${theme.hoverShadow} hover:scale-[1.02] transition-all duration-500 active:scale-95`}
           >
             Start Game
           </button>
@@ -179,7 +191,7 @@ export default function Home() {
                   }}
                   className="flex-shrink-0 w-28 flex flex-col items-center gap-3 snap-center group text-left transition-transform active:scale-95"
                 >
-                  <div className="w-28 h-28 rounded-md bg-gray-800 overflow-hidden shadow-lg border-2 border-transparent group-hover:border-[#BF953F] transition-colors relative">
+                  <div className={`w-28 h-28 rounded-md bg-gray-800 overflow-hidden shadow-lg border-2 border-transparent ${theme.hoverBorder} transition-colors duration-500 relative`}>
                     {playlist.images?.[0]?.url ? (
                       <img src={playlist.images[0].url} alt={playlist.name} className="w-full h-full object-cover" />
                     ) : (

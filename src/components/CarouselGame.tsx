@@ -133,28 +133,92 @@ export default function CarouselGame({ playlistId, accessToken, onExit }: { play
     const fetchYear = async () => {
       const track = tracks[currentIndex];
       const fallbackYear = track.album.release_date.split('-')[0];
+      
+      // Set to fallback immediately so there's never an empty year
       setOriginalYear(fallbackYear);
+
       try {
-        const baseName = track.name.split(' - ')[0].split(' (')[0].trim().replace(/"/g, '');
-        const artistName = track.artists[0].name.replace(/"/g, '');
-        const query = encodeURIComponent(`${baseName} ${artistName}`);
+        // Remove " - Remastered", " (feat. ...)", etc. to get the core song name
+        const baseName = track.name.split(' - ')[0].split(' (')[0].trim();
+        const artistName = track.artists[0].name;
         
-        const res = await fetch(`https://api.spotify.com/v1/search?q=${query}&type=track&limit=10`, {
-          headers: { Authorization: `Bearer ${accessToken}` }
-        });
+        const cleanBaseName = baseName.replace(/"/g, '');
+        const cleanArtistName = artistName.replace(/"/g, '');
         
+        // Helper to ignore punctuation (like "Salta!!!" vs "Salta") and support accents
+        const normalize = (str: string) => str.toLowerCase().replace(/[^\w\s\u00C0-\u017F]/g, '').trim();
+        const normTargetTrack = normalize(cleanBaseName);
+        const normTargetArtist = normalize(cleanArtistName);
+        
+        // Use a broad search query to let both algorithms find the best matches
+        const query = encodeURIComponent(`${cleanBaseName} ${cleanArtistName}`);
+        
+        const [spotifyRes, itunesRes] = await Promise.allSettled([
+          fetch(`https://api.spotify.com/v1/search?q=${query}&type=track&limit=50`, {
+            headers: { Authorization: `Bearer ${accessToken}` }
+          }),
+          fetch(`https://itunes.apple.com/search?term=${query}&entity=song&limit=15`)
+        ]);
+
         let oldestYear = parseInt(fallbackYear);
-        if (res.ok) {
-          const data = await res.json();
-          for (const item of (data.tracks?.items || [])) {
-            const itemYear = parseInt(item.album.release_date.split('-')[0]);
-            if (!isNaN(itemYear) && itemYear < oldestYear) {
-              oldestYear = itemYear;
+
+        // Process Spotify Results
+        if (spotifyRes.status === 'fulfilled' && spotifyRes.value.ok) {
+          const data = await spotifyRes.value.json();
+          const items = data.tracks?.items || [];
+          
+          for (const item of items) {
+            const isArtistMatch = item.artists.some((a: any) => {
+              const normA = normalize(a.name);
+              return normA.includes(normTargetArtist) || normTargetArtist.includes(normA);
+            });
+            
+            const itemBaseName = item.name.split(' - ')[0].split(' (')[0];
+            const normItemTrack = normalize(itemBaseName);
+            const isTrackMatch = normItemTrack === normTargetTrack || 
+                                 normalize(item.name).includes(normTargetTrack) ||
+                                 normTargetTrack.includes(normItemTrack);
+
+            if (isArtistMatch && isTrackMatch) {
+              const itemYear = parseInt(item.album.release_date.split('-')[0]);
+              if (!isNaN(itemYear) && itemYear < oldestYear) {
+                oldestYear = itemYear;
+              }
             }
           }
         }
-        if (isMounted) setOriginalYear(oldestYear.toString());
-      } catch (err) {}
+
+        // Process iTunes Results as a fallback/secondary source
+        if (itunesRes.status === 'fulfilled' && itunesRes.value.ok) {
+          const data = await itunesRes.value.json();
+          const results = data.results || [];
+          
+          for (const item of results) {
+            const normItemArtist = normalize(item.artistName);
+            const isArtistMatch = normItemArtist.includes(normTargetArtist) || 
+                                  normTargetArtist.includes(normItemArtist);
+                                  
+            const itemBaseName = item.trackName.split(' - ')[0].split(' (')[0];
+            const normItemTrack = normalize(itemBaseName);
+            const isTrackMatch = normItemTrack === normTargetTrack || 
+                                 normalize(item.trackName).includes(normTargetTrack) ||
+                                 normTargetTrack.includes(normItemTrack);
+
+            if (isArtistMatch && isTrackMatch && item.releaseDate) {
+              const itemYear = parseInt(item.releaseDate.substring(0, 4));
+              if (!isNaN(itemYear) && itemYear < oldestYear) {
+                oldestYear = itemYear;
+              }
+            }
+          }
+        }
+
+        if (isMounted) {
+          setOriginalYear(oldestYear.toString());
+        }
+      } catch (err) {
+        console.error("Failed to fetch original year:", err);
+      }
     };
     fetchYear();
     return () => { isMounted = false; };
@@ -240,7 +304,6 @@ export default function CarouselGame({ playlistId, accessToken, onExit }: { play
   }, [status, carouselPhase, currentIndex]);
 
   const handleReveal = () => {
-    if (playerRef.current) playerRef.current.pause().catch(() => {});
     setCarouselPhase('scoring');
   };
 
@@ -338,6 +401,7 @@ export default function CarouselGame({ playlistId, accessToken, onExit }: { play
   };
 
   const nextSong = () => {
+    if (playerRef.current) playerRef.current.pause().catch(() => {});
     if (currentIndex + 1 >= tracks.length) {
       onExit(); return;
     }
