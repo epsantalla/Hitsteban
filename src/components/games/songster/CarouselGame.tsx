@@ -1,24 +1,16 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { Play, Loader2, Music, Calendar, Mic2, Plus, X, Check, Trophy, ChevronRight, SkipForward, Settings } from "lucide-react";
-
-interface Track {
-  id: string;
-  uri: string;
-  name: string;
-  artists: { name: string }[];
-  album: { release_date: string };
-}
+import { Loader2, Music, Calendar, Mic2, Plus, X, Trophy, SkipForward, Settings } from "lucide-react";
+import { usePlaylistTracks } from "@/hooks/usePlaylistTracks";
+import { useOriginalYear } from "@/hooks/useOriginalYear";
+import { useSpotifyPlayer } from "@/hooks/useSpotifyPlayer";
 
 interface Player {
   id: string;
   name: string;
   score: number;
 }
-
-const RUBY_COLOR = "#B81137";
-const RUBY_LIGHT = "#FF2A55";
 
 const playErrorSound = () => {
   try {
@@ -29,33 +21,31 @@ const playErrorSound = () => {
     const gain = ctx.createGain();
     osc.connect(gain);
     gain.connect(ctx.destination);
-    
+
     // Harsher, louder error sound
     osc.type = 'sawtooth';
     osc.frequency.setValueAtTime(260, ctx.currentTime);
     osc.frequency.exponentialRampToValueAtTime(65, ctx.currentTime + 0.5);
-    
+
     // Increased volume (from 1.5 to 1.95, 30% higher)
     gain.gain.setValueAtTime(1.95, ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
-    
+
     osc.start();
     osc.stop(ctx.currentTime + 0.5);
   } catch(e) {}
 };
 
 export default function CarouselGame({ playlistId, accessToken, onExit }: { playlistId: string, accessToken: string, onExit: () => void }) {
-  const [tracks, setTracks] = useState<Track[]>([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [status, setStatus] = useState<'SETUP' | 'INITIALIZING_SDK' | 'READY' | 'ERROR'>('SETUP');
-  const [isFetchingTracks, setIsFetchingTracks] = useState(true);
-  const [errorMsg, setErrorMsg] = useState("");
-  const [originalYear, setOriginalYear] = useState<string>('');
+  const { tracks, loading: isFetchingTracks, error: loadError } = usePlaylistTracks(playlistId, accessToken);
+  const player = useSpotifyPlayer(accessToken, "Songster Carousel");
 
-  const deviceIdRef = useRef<string | null>(null);
-  const playerRef = useRef<any>(null);
-  const accessTokenRef = useRef(accessToken);
-  useEffect(() => { accessTokenRef.current = accessToken; }, [accessToken]);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [status, setStatus] = useState<'SETUP' | 'INITIALIZING_SDK' | 'READY'>('SETUP');
+  const [playerError, setPlayerError] = useState<string | null>(null);
+  const originalYear = useOriginalYear(tracks[currentIndex], accessToken);
+
+  const errorMsg = loadError || playerError;
 
   // Game state
   const [players, setPlayers] = useState<Player[]>([
@@ -94,194 +84,26 @@ export default function CarouselGame({ playlistId, accessToken, onExit }: { play
   const activePlayerIndex = (startingPlayerIndexForSong + turnsTaken - 1) % players.length;
   const isLastPlayer = turnsTaken === players.length;
 
-  useEffect(() => {
-    const loadTracks = async () => {
-      try {
-        let allTracks: Track[] = [];
-        let url = `https://api.spotify.com/v1/playlists/${playlistId}/items?limit=100&additional_types=track`;
-        
-        while (url) {
-          const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
-          if (!res.ok) throw new Error("Failed to fetch tracks");
-          const data = await res.json();
-          const validTracks = data.items
-            .map((item: any) => item.track || item.item)
-            .filter((t: any) => t && t.uri && t.type === 'track' && t.is_playable !== false && !t.is_local);
-          allTracks = [...allTracks, ...validTracks];
-          url = data.next;
-        }
-
-        for (let i = allTracks.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [allTracks[i], allTracks[j]] = [allTracks[j], allTracks[i]];
-        }
-        
-        if (allTracks.length === 0) throw new Error(`Playlist is empty.`);
-        setTracks(allTracks);
-        setIsFetchingTracks(false);
-      } catch (err: any) {
-        setErrorMsg(err.message);
-        setStatus('ERROR');
-      }
-    };
-    loadTracks();
-  }, [playlistId, accessToken]);
-
-  useEffect(() => {
-    if (tracks.length === 0 || !tracks[currentIndex]) return;
-    let isMounted = true;
-    const fetchYear = async () => {
-      const track = tracks[currentIndex];
-      const fallbackYear = track.album.release_date.split('-')[0];
-      
-      // Set to fallback immediately so there's never an empty year
-      setOriginalYear(fallbackYear);
-
-      try {
-        // Remove " - Remastered", " (feat. ...)", etc. to get the core song name
-        const baseName = track.name.split(' - ')[0].split(' (')[0].trim();
-        const artistName = track.artists[0].name;
-        
-        const cleanBaseName = baseName.replace(/"/g, '');
-        const cleanArtistName = artistName.replace(/"/g, '');
-        
-        // Helper to ignore punctuation (like "Salta!!!" vs "Salta") and support accents
-        const normalize = (str: string) => str.toLowerCase().replace(/[^\w\s\u00C0-\u017F]/g, '').trim();
-        const normTargetTrack = normalize(cleanBaseName);
-        const normTargetArtist = normalize(cleanArtistName);
-        
-        // Use a broad search query to let both algorithms find the best matches
-        const query = encodeURIComponent(`${cleanBaseName} ${cleanArtistName}`);
-        
-        const [spotifyRes, itunesRes] = await Promise.allSettled([
-          fetch(`https://api.spotify.com/v1/search?q=${query}&type=track&limit=50`, {
-            headers: { Authorization: `Bearer ${accessToken}` }
-          }),
-          fetch(`https://itunes.apple.com/search?term=${query}&entity=song&limit=15`)
-        ]);
-
-        let oldestYear = parseInt(fallbackYear);
-
-        // Process Spotify Results
-        if (spotifyRes.status === 'fulfilled' && spotifyRes.value.ok) {
-          const data = await spotifyRes.value.json();
-          const items = data.tracks?.items || [];
-          
-          for (const item of items) {
-            const isArtistMatch = item.artists.some((a: any) => {
-              const normA = normalize(a.name);
-              return normA.includes(normTargetArtist) || normTargetArtist.includes(normA);
-            });
-            
-            const itemBaseName = item.name.split(' - ')[0].split(' (')[0];
-            const normItemTrack = normalize(itemBaseName);
-            const isTrackMatch = normItemTrack === normTargetTrack || 
-                                 normalize(item.name).includes(normTargetTrack) ||
-                                 normTargetTrack.includes(normItemTrack);
-
-            if (isArtistMatch && isTrackMatch) {
-              const itemYear = parseInt(item.album.release_date.split('-')[0]);
-              if (!isNaN(itemYear) && itemYear < oldestYear) {
-                oldestYear = itemYear;
-              }
-            }
-          }
-        }
-
-        // Process iTunes Results as a fallback/secondary source
-        if (itunesRes.status === 'fulfilled' && itunesRes.value.ok) {
-          const data = await itunesRes.value.json();
-          const results = data.results || [];
-          
-          for (const item of results) {
-            const normItemArtist = normalize(item.artistName);
-            const isArtistMatch = normItemArtist.includes(normTargetArtist) || 
-                                  normTargetArtist.includes(normItemArtist);
-                                  
-            const itemBaseName = item.trackName.split(' - ')[0].split(' (')[0];
-            const normItemTrack = normalize(itemBaseName);
-            const isTrackMatch = normItemTrack === normTargetTrack || 
-                                 normalize(item.trackName).includes(normTargetTrack) ||
-                                 normTargetTrack.includes(normItemTrack);
-
-            if (isArtistMatch && isTrackMatch && item.releaseDate) {
-              const itemYear = parseInt(item.releaseDate.substring(0, 4));
-              if (!isNaN(itemYear) && itemYear < oldestYear) {
-                oldestYear = itemYear;
-              }
-            }
-          }
-        }
-
-        if (isMounted) {
-          setOriginalYear(oldestYear.toString());
-        }
-      } catch (err) {
-        console.error("Failed to fetch original year:", err);
-      }
-    };
-    fetchYear();
-    return () => { isMounted = false; };
-  }, [currentIndex, tracks, accessToken]);
-
   const initPlayerAndStart = () => {
     setStatus('INITIALIZING_SDK');
-
-    const startSdk = () => {
-      // @ts-ignore
-      const player = new window.Spotify.Player({
-        name: 'Hitsteban Carousel',
-        getOAuthToken: (cb: any) => { cb(accessTokenRef.current); },
-        volume: 0.5
-      });
-      playerRef.current = player;
-      player.addListener('ready', ({ device_id }: { device_id: string }) => {
-        deviceIdRef.current = device_id;
+    player.init({
+      onReady: () => {
         setStatus('READY');
         setCarouselPhase('intro');
-      });
-      player.addListener('initialization_error', ({ message }: any) => { console.error(message); setErrorMsg(message); setStatus('ERROR'); });
-      player.addListener('authentication_error', ({ message }: any) => { console.error(message); setErrorMsg(message); setStatus('ERROR'); });
-      player.addListener('account_error', ({ message }: any) => { console.error(message); setErrorMsg(message); setStatus('ERROR'); });
-      player.connect();
-    };
-
-    // @ts-ignore
-    if (window.Spotify) {
-      startSdk();
-    } else {
-      // @ts-ignore
-      window.onSpotifyWebPlaybackSDKReady = startSdk;
-      const script = document.createElement("script");
-      script.src = "https://sdk.scdn.co/spotify-player.js";
-      script.async = true;
-      document.body.appendChild(script);
-    }
-  };
-
-  const playTrack = async (index: number, deviceId: string, retries = 3) => {
-    try {
-      const res = await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
-        method: 'PUT',
-        headers: { Authorization: `Bearer ${accessTokenRef.current}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ uris: [tracks[index].uri] }),
-      });
-      if (!res.ok && retries > 0) {
-        await new Promise(r => setTimeout(r, 500));
-        return playTrack(index, deviceId, retries - 1);
-      }
-    } catch (err) {}
+      },
+      onError: (message) => setPlayerError(message),
+    });
   };
 
   const startGame = () => {
     if (isFetchingTracks) return;
-    
+
     // Convert empty names to "Player X"
     const finalPlayers = players.map((p, i) => ({
       ...p,
       name: p.name.trim() === "" ? `Player ${i + 1}` : p.name.trim()
     }));
-    
+
     if (finalPlayers.length < 2) return;
     setPlayers(finalPlayers);
     setStartingPlayerIndexForSong(Math.floor(Math.random() * finalPlayers.length));
@@ -295,9 +117,7 @@ export default function CarouselGame({ playlistId, accessToken, onExit }: { play
     if (status === 'READY' && carouselPhase === 'intro') {
       const timer = setTimeout(() => {
         setCarouselPhase('playing');
-        if (deviceIdRef.current) {
-          playTrack(currentIndex, deviceIdRef.current);
-        }
+        player.playUri(tracks[currentIndex].uri);
       }, 2000);
       return () => clearTimeout(timer);
     }
@@ -370,7 +190,7 @@ export default function CarouselGame({ playlistId, accessToken, onExit }: { play
     if (selectedIconToAssign) {
       // Assign the selected icon to this player
       let newAssignments = { ...iconAssignments };
-      
+
       // If player already had an icon, remove it
       if (currentIconForPlayer) {
         newAssignments[currentIconForPlayer] = null;
@@ -394,14 +214,14 @@ export default function CarouselGame({ playlistId, accessToken, onExit }: { play
     if (iconAssignments.year) { const p = newPlayers.find(p => p.id === iconAssignments.year); if (p) p.score += settings.ptsYear; }
     if (iconAssignments.title) { const p = newPlayers.find(p => p.id === iconAssignments.title); if (p) p.score += settings.ptsTitle; }
     if (iconAssignments.artist) { const p = newPlayers.find(p => p.id === iconAssignments.artist); if (p) p.score += settings.ptsArtist; }
-    
+
     // Keep players in original seating order in the state!
     setPlayers(newPlayers);
     setCarouselPhase('leaderboard');
   };
 
   const nextSong = () => {
-    if (playerRef.current) playerRef.current.pause().catch(() => {});
+    player.pause();
     if (currentIndex + 1 >= tracks.length) {
       onExit(); return;
     }
@@ -416,17 +236,17 @@ export default function CarouselGame({ playlistId, accessToken, onExit }: { play
 
   // --- RENDERING ---
 
-  if (status === 'ERROR') return <div className="flex flex-col items-center justify-center min-h-screen text-red-500 bg-[#0a0a0a]">{errorMsg}</div>;
+  if (errorMsg) return <div className="flex flex-col items-center justify-center min-h-screen text-red-500 bg-[#0a0a0a]">{errorMsg}</div>;
   if (status === 'INITIALIZING_SDK') return <div className="flex flex-col items-center justify-center min-h-screen text-[#B81137] bg-[#0a0a0a]"><Loader2 className="animate-spin w-12 h-12 mb-4" />Loading...</div>;
-  
+
   if (status === 'SETUP') {
     return (
       <div className="flex flex-col items-center min-h-[100dvh] pt-12 pb-24 px-6 bg-[#0a0a0a] text-foreground overflow-y-auto touch-pan-y relative">
         <style>{`
           .gem-bg {
             background: linear-gradient(135deg, #FF2A55 0%, #B81137 50%, #7A0B22 100%);
-            box-shadow: inset 0px 5px 15px rgba(255, 255, 255, 0.4), 
-                        inset 0px -5px 15px rgba(0, 0, 0, 0.5), 
+            box-shadow: inset 0px 5px 15px rgba(255, 255, 255, 0.4),
+                        inset 0px -5px 15px rgba(0, 0, 0, 0.5),
                         0px 8px 25px rgba(184, 17, 55, 0.5);
             border: 2px solid #FF4D79;
           }
@@ -437,7 +257,7 @@ export default function CarouselGame({ playlistId, accessToken, onExit }: { play
             text-shadow: 0px 2px 10px rgba(184, 17, 55, 0.4);
           }
         `}</style>
-        
+
         <div className="absolute top-4 right-4 z-40">
           <button onClick={() => setShowSettings(true)} className="p-2 text-gray-500 hover:text-white transition rounded-full hover:bg-gray-800">
             <Settings size={24} />
@@ -492,7 +312,7 @@ export default function CarouselGame({ playlistId, accessToken, onExit }: { play
           {players.map((p, i) => (
             <div key={p.id} className="flex items-center gap-2">
               <span className="text-gray-500 font-mono w-6">{i+1}.</span>
-              <input 
+              <input
                 value={p.name}
                 onChange={(e) => { const newP = [...players]; newP[i].name = e.target.value; setPlayers(newP); }}
                 placeholder={`Player ${i+1}`}
@@ -506,7 +326,7 @@ export default function CarouselGame({ playlistId, accessToken, onExit }: { play
             </div>
           ))}
           {players.length < 12 && (
-            <button 
+            <button
               onClick={() => setPlayers([...players, {id: Date.now().toString(), name: '', score: 0}])}
               className="flex items-center justify-center gap-2 py-3 mt-2 border border-dashed border-gray-700 rounded-lg text-gray-400 hover:text-[#B81137] hover:border-[#B81137] transition"
             >
@@ -523,7 +343,7 @@ export default function CarouselGame({ playlistId, accessToken, onExit }: { play
 
   // Common wrapper for playing, scoring, leaderboard
   return (
-    <div 
+    <div
       className="fixed inset-0 bg-[#0a0a0a] flex flex-col select-none overflow-hidden touch-none"
       onPointerLeave={cancelHolds}
       onPointerCancel={cancelHolds}
@@ -532,8 +352,8 @@ export default function CarouselGame({ playlistId, accessToken, onExit }: { play
       <style>{`
         .gem-bg {
           background: linear-gradient(135deg, #FF2A55 0%, #B81137 50%, #7A0B22 100%);
-          box-shadow: inset 0px 5px 15px rgba(255, 255, 255, 0.4), 
-                      inset 0px -5px 15px rgba(0, 0, 0, 0.5), 
+          box-shadow: inset 0px 5px 15px rgba(255, 255, 255, 0.4),
+                      inset 0px -5px 15px rgba(0, 0, 0, 0.5),
                       0px 8px 25px rgba(184, 17, 55, 0.5);
           border: 2px solid #FF4D79;
         }
@@ -547,7 +367,7 @@ export default function CarouselGame({ playlistId, accessToken, onExit }: { play
           100% { opacity: 0; }
         }
       `}</style>
-      
+
       {isGracePeriod && (
         <div className="fixed inset-0 bg-[#B81137] z-50 animate-[flash_2s_ease-out_forwards] pointer-events-none mix-blend-screen" />
       )}
@@ -557,7 +377,7 @@ export default function CarouselGame({ playlistId, accessToken, onExit }: { play
         <span className="text-xs opacity-50 uppercase text-[#B81137]">CAROUSEL</span>
       </div>
       <div className="absolute top-4 right-4 z-40 mt-2">
-        <button onClick={() => { if(playerRef.current) playerRef.current.disconnect(); onExit(); }} className="text-xs px-3 py-1 border border-gray-700 rounded text-gray-400 hover:bg-gray-800 transition">End Game</button>
+        <button onClick={() => { player.disconnect(); onExit(); }} className="text-xs px-3 py-1 border border-gray-700 rounded text-gray-400 hover:bg-gray-800 transition">End Game</button>
       </div>
 
       {carouselPhase === 'intro' && (
@@ -579,10 +399,10 @@ export default function CarouselGame({ playlistId, accessToken, onExit }: { play
               00:{timeLeft.toString().padStart(2, '0')}
             </div>
           </div>
-          
+
           <div className="flex flex-col items-center gap-8 w-full max-w-xs z-30">
             {!isLastPlayer && (
-              <button 
+              <button
                 onPointerDown={handleNextPlayerDown}
                 className="relative w-full py-6 rounded-2xl gem-bg overflow-hidden active:scale-95 transition-transform shadow-lg"
               >
@@ -590,7 +410,7 @@ export default function CarouselGame({ playlistId, accessToken, onExit }: { play
                 <span className="relative z-10 font-bold text-2xl text-white tracking-widest uppercase drop-shadow-md">Next Player</span>
               </button>
             )}
-            <button 
+            <button
               onPointerDown={handleEndDown}
               className={`relative w-full py-6 rounded-2xl overflow-hidden active:scale-95 transition-transform ${isLastPlayer ? 'gem-bg shadow-lg' : 'bg-[#1a1a1a] border border-[#B81137]/40'}`}
             >
@@ -618,13 +438,13 @@ export default function CarouselGame({ playlistId, accessToken, onExit }: { play
               const Icon = item.icon;
               const isAssigned = iconAssignments[item.type as keyof typeof iconAssignments] !== null;
               const isSelected = selectedIconToAssign === item.type;
-              
+
               return (
                 <div key={item.type} className="relative flex flex-col items-center">
-                  <button 
+                  <button
                     onClick={() => { if (!isAssigned) handleTopIconClick(item.type as any) }}
                     className={`w-16 h-16 rounded-full flex items-center justify-center border-2 transition-all active:scale-95 ${
-                      isAssigned ? 'opacity-20 border-gray-700 bg-transparent cursor-not-allowed' 
+                      isAssigned ? 'opacity-20 border-gray-700 bg-transparent cursor-not-allowed'
                       : isSelected ? `bg-[#222] border-[#B81137] ${item.color} shadow-[0_0_20px_rgba(184,17,55,0.8)] scale-110`
                       : `bg-[#111] border-gray-600 ${item.color} hover:border-[#B81137]/50`
                     }`}
@@ -644,8 +464,8 @@ export default function CarouselGame({ playlistId, accessToken, onExit }: { play
             {players.map(p => {
               const pIcons = Object.entries(iconAssignments).filter(([_, id]) => id === p.id).map(([type]) => type);
               return (
-                <button 
-                  key={p.id} 
+                <button
+                  key={p.id}
                   onClick={() => handlePlayerClick(p.id)}
                   className={`flex items-center justify-between p-4 rounded-xl border-2 transition-colors active:scale-[0.98] ${
                     selectedIconToAssign ? 'bg-[#1a1a1a] border-[#B81137]/30 hover:border-[#B81137]' : 'bg-[#111] border-transparent hover:bg-[#1a1a1a]'
@@ -663,9 +483,9 @@ export default function CarouselGame({ playlistId, accessToken, onExit }: { play
               );
             })}
           </div>
-          
+
           <div className="absolute bottom-6 left-0 right-0 px-6 flex justify-center pointer-events-auto z-30">
-            <button 
+            <button
               onPointerDown={handleConfirmDown}
               className="relative w-full max-w-xs py-5 rounded-full gem-bg overflow-hidden active:scale-95 transition-transform"
             >
@@ -680,7 +500,7 @@ export default function CarouselGame({ playlistId, accessToken, onExit }: { play
         <div className="flex-1 flex flex-col items-center justify-start pt-20 px-4 w-full h-full overflow-hidden z-30 pb-6">
           <Trophy className="w-20 h-20 text-[#B81137] mb-4 flex-shrink-0 drop-shadow-[0_0_15px_rgba(184,17,55,0.5)]" />
           <h2 className="text-4xl font-bold text-white tracking-widest uppercase mb-6 flex-shrink-0">Leaderboard</h2>
-          
+
           <div className="w-full max-w-sm flex flex-col gap-3 mb-6 flex-1 overflow-y-auto min-h-0 pb-4">
             {[...players].sort((a, b) => b.score - a.score).map((p, i) => (
               <div key={p.id} className="flex items-center p-4 rounded-xl bg-[#111] border border-[#B81137]/20 shadow-sm flex-shrink-0 overflow-hidden">
@@ -692,7 +512,7 @@ export default function CarouselGame({ playlistId, accessToken, onExit }: { play
           </div>
 
           <div className="w-full flex justify-center flex-shrink-0">
-            <button 
+            <button
               onPointerDown={handleNextSongDown}
               className="relative w-full max-w-sm py-6 rounded-xl bg-gray-800 border border-gray-700 overflow-hidden active:scale-95 transition-transform shadow-md"
             >

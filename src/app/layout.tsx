@@ -14,8 +14,8 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "Playsteban",
-  description: "Spotify Guess the Song Web Application",
+  title: "Estebox",
+  description: "Estebox — a collection of party games. Featuring Songster, the Spotify guess-the-song game.",
 };
 
 export default function RootLayout({

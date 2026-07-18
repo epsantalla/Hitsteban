@@ -6,8 +6,8 @@ export interface GameDefinition {
 
 export const AVAILABLE_GAMES: GameDefinition[] = [
   {
-    id: "hitster",
-    name: "Hitster",
+    id: "songster",
+    name: "Songster",
     description: "Guess the song from a Spotify playlist. Classic solo mode or Carousel multiplayer.",
   },
 ];

@@ -1,6 +1,6 @@
-# Guess the Song - Web Application Setup
+# Estebox - Web Application Setup
 
-This application is built with Next.js, React, Tailwind CSS, and integrates the Spotify Web Playback SDK.
+Estebox is a collection of party games built with Next.js, React, and Tailwind CSS. Its first game, **Songster** (guess the song), integrates the Spotify Web Playback SDK. The steps below get Songster running (the only game that needs Spotify credentials so far).
 
 ## Prerequisites
 
@@ -46,12 +46,13 @@ This application is built with Next.js, React, Tailwind CSS, and integrates the 
    ```
 2. Open your web browser and go to [http://127.0.0.1:3000](http://127.0.0.1:3000).
 
-## How to Play
+## How to Play (Songster)
 
-1. Click "Log in with Spotify Premium" and authorize the app.
-2. Enter a Spotify Playlist ID. You can find this in the URL of any public Spotify playlist.
+1. From the Estebox menu, select **Songster**.
+2. Click "Log in with Spotify Premium" and authorize the app.
+3. Enter a Spotify Playlist ID. You can find this in the URL of any public Spotify playlist.
    - Example: For the URL `https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M`, the ID is `37i9dQZF1DXcBWIGoYBM5M`.
-3. Tap **Start Game**.
-4. The first song will begin playing.
-5. **Phase 1**: Hold (or click) anywhere on the screen to reveal the song details.
-6. **Phase 2**: Hold (or click) again to skip to the next randomized song.
+4. Tap **Start Game**.
+5. The first song will begin playing.
+6. **Phase 1**: Hold (or click) anywhere on the screen to reveal the song details.
+7. **Phase 2**: Hold (or click) again to skip to the next randomized song.

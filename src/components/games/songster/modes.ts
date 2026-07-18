@@ -8,7 +8,7 @@ export const AVAILABLE_MODES: GameMode[] = [
   {
     id: "classic",
     name: "Classic",
-    description: "The original Hitsteban experience. Guess the track from the start.",
+    description: "The original Songster experience. Guess the track from the start.",
   },
   {
     id: "carousel",

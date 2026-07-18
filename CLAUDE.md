@@ -4,7 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-Hitsteban ("Guess the Song") is a Next.js 14 (App Router) web app that turns a Spotify playlist into a "guess the song" party game, using the Spotify Web Playback SDK to stream full tracks in-browser. Auth is Spotify OAuth via NextAuth. There is no backend database — all game state lives in React component state for the duration of a session.
+**Estebox** is a Next.js 14 (App Router) web app that hosts a collection of party games. It is a multi-game site: the main menu is the landing screen and each game is a self-contained module. There is no site-wide login — games opt into auth as needed.
+
+The first (currently only) game is **Songster** ("Guess the Song"): it turns a Spotify playlist into a guess-the-song game, using the Spotify Web Playback SDK to stream full tracks in-browser. Songster authenticates with Spotify OAuth via NextAuth and gates on that auth *internally* (the rest of Estebox does not require it). There is no backend database — all game state lives in React component state for the duration of a session.
+
+> Note: the on-disk repo folder is still named `Hitsteban` (Songster/Estebox is the product rename); paths in this doc are relative to the repo root regardless of its folder name.
 
 ## Commands
 
@@ -26,27 +30,36 @@ This is effectively a single-page client app; almost every component is `"use cl
 
 - **`src/app/api/auth/[...nextauth]/route.ts`** — the only server-side logic. Configures the NextAuth Spotify provider and scopes (`streaming`, `user-read-email`, `user-read-private`, `playlist-read-private`, `playlist-read-collaborative`). Its `jwt` callback stores `accessToken`/`refreshToken`/`accessTokenExpires` on the token and transparently refreshes the access token via Spotify's token endpoint when expired; the `session` callback exposes `accessToken` (and refresh errors) on the session object. Session typing is augmented in `src/types/next-auth.d.ts`.
 - **`src/components/Providers.tsx`** — wraps the app in `SessionProvider` with a 50-minute `refetchInterval` to keep the session/token fresh.
-- **`src/app/page.tsx`** — the home screen and router of sorts. Gates on `useSession()`: shows a Spotify login button when signed out; once signed in, gates on `selectedGame` state (`null` = show `MainMenu`, the top-level menu of games from `src/lib/games.ts`). Selecting "Hitster" reveals the existing setup screen: it fetches the user's Spotify playlists directly from the Spotify Web API (client-side `fetch`, no server proxy), lets the user pick/paste a playlist (a regex extracts the ID from full playlist URLs/URIs) and a mode from `src/lib/modes.ts`, then renders either `Game` or `CarouselGame` based on the selected mode. All of this is still client-side state (no routing) — a "&larr; Menu" button resets `selectedGame` to `null`.
-- **`src/components/MainMenu.tsx`** — top-level game picker rendered when `selectedGame` is `null`. Lists entries from `src/lib/games.ts` (`AVAILABLE_GAMES`); currently just "Hitster".
-- **`src/components/Game.tsx`** — "Classic" solo mode: hold-to-reveal a track, hold again to advance.
-- **`src/components/CarouselGame.tsx`** — "Carousel" mode: turn-based multiplayer with a per-turn countdown timer, click-to-assign scoring icons (year/title/artist) per song, and a leaderboard between songs.
+- **`src/app/page.tsx`** — thin router. Waits for `useSession()` to finish loading, then holds `selectedGame` state (no URL routing): `null` (or an unknown id) shows `MainMenu`; a known id renders that game's module (currently `selectedGame === "songster"` → `Songster`). It intentionally holds **no** Spotify/auth logic — that lives inside the game module.
+- **`src/components/MainMenu.tsx`** — the Estebox landing screen / game picker. Lists entries from `src/lib/games.ts` (`AVAILABLE_GAMES`; currently just "Songster") and calls `onSelectGame(id)`. Self-contained: it reads `useSession()` itself and shows a "Sign Out" button only when a session exists (auth is account-level, established by a game).
+- **`src/components/games/songster/`** — the self-contained Songster game module:
+  - **`Songster.tsx`** — Songster's entry point. Owns its Spotify auth gate (shows a "Log in with Spotify Premium" screen when signed out), the `RefreshAccessTokenError` re-auth, playlist fetching (client-side `fetch`, no server proxy), pick/paste playlist (a regex extracts the ID from full playlist URLs/URIs), and mode selection from `./modes`; then renders `ClassicGame` or `CarouselGame`. `onExit` returns to the Estebox menu.
+  - **`ClassicGame.tsx`** — "Classic" solo mode: hold-to-reveal a track, hold again to advance. Consumes the shared Spotify hooks (below) and only owns its reveal/advance UI.
+  - **`CarouselGame.tsx`** — "Carousel" mode: turn-based multiplayer with a per-turn countdown timer, click-to-assign scoring icons (year/title/artist) per song, and a leaderboard between songs. Also built on the shared hooks; owns only the turn/scoring/leaderboard logic.
+  - **`modes.ts`** — Songster's own mode registry (`AVAILABLE_MODES`).
 
-### Duplicated logic between `Game.tsx` and `CarouselGame.tsx`
+### Shared Spotify layer (`src/lib/spotify/` + `src/hooks/`)
 
-These two components are independent and intentionally do not share code today, but both re-implement the same three pieces of logic nearly verbatim:
-1. **Playlist loading**: paginate `GET /v1/playlists/{id}/items`, filter out non-track/non-playable/local items, then Fisher-Yates shuffle.
-2. **"Original year" resolution**: playlist metadata often reflects a remaster/reissue date rather than the true original release year. Both components run a fuzzy cross-reference against Spotify search and the iTunes Search API (name/artist normalization strips punctuation and diacritics-safe casing), taking the oldest matching year found, falling back to the playlist track's own `album.release_date` year.
-3. **Web Playback SDK bootstrap**: lazily inject `https://sdk.scdn.co/spotify-player.js`, construct `window.Spotify.Player` with `getOAuthToken` reading from a ref (so the SDK always sees the latest token even after a NextAuth refresh), and `playTrack` with a retry loop (device not yet active on Spotify's backend) via `PUT /v1/me/player/play`.
+These are general Spotify building blocks (reusable by any future music game, not just Songster). The three pieces of logic every Songster mode needs are factored out here so game components stay focused on their own UX. **Change behavior here, in one place — not per-component.**
 
-If you change one of these behaviors, check whether the same fix is needed in the other component.
+- **`src/lib/spotify/types.ts`** — the shared `Track` shape.
+- **`src/lib/spotify/playlist.ts`** — `loadPlaylistTracks(playlistId, accessToken)`: paginate `GET /v1/playlists/{id}/items`, filter out non-track/non-playable/local items, Fisher-Yates shuffle. Throws on API error / empty result.
+- **`src/lib/spotify/year.ts`** — `resolveOriginalYear(track, accessToken)`: playlist metadata often reflects a remaster/reissue date, so this fuzzy cross-references Spotify search + the iTunes Search API (punctuation-stripping, accent-safe normalization), returning the oldest matching year and falling back to the track's own `album.release_date` year. Never throws. Also exports `releaseYear(dateString)`.
+- **`src/hooks/usePlaylistTracks.ts`** — wraps `loadPlaylistTracks` in `{ tracks, loading, error }`.
+- **`src/hooks/useOriginalYear.ts`** — resolves the current track's year, showing the fallback immediately then refining it; re-runs when the track changes.
+- **`src/hooks/useSpotifyPlayer.ts`** — Web Playback SDK lifecycle: lazily injects `https://sdk.scdn.co/spotify-player.js`, constructs `window.Spotify.Player` with `getOAuthToken` reading from a ref (so the SDK always sees the latest token after a NextAuth refresh), and exposes `init({ onReady, onError })`, `playUri(uri)` (with the device-not-yet-active retry loop via `PUT /v1/me/player/play`), `pause()`, `disconnect()`, and `deviceIdRef`. Cleans up the player on unmount.
+
+A new mode/game should reuse these hooks rather than re-implementing playlist/year/player logic.
 
 ### Adding a new game (top-level menu entry)
 
-Register it in `src/lib/games.ts` (`AVAILABLE_GAMES`), then branch on the game id in `src/app/page.tsx` (alongside the `selectedGame === "hitster"` setup screen) to render its own setup UI/component(s).
+1. Register it in `src/lib/games.ts` (`AVAILABLE_GAMES`).
+2. Create a self-contained module under `src/components/games/<game>/` with an entry component that takes `onExit: () => void` and handles its own requirements (auth, setup, etc.) internally — mirror `games/songster/`.
+3. Branch on the game id in `src/app/page.tsx` (alongside `selectedGame === "songster"`) to render the module's entry component.
 
-### Adding a new Hitster game mode
+### Adding a new Songster game mode
 
-Register it in `src/lib/modes.ts` (`AVAILABLE_MODES`), then branch on the mode id in `src/app/page.tsx` to render the new component alongside `Game`/`CarouselGame`.
+Register it in `src/components/games/songster/modes.ts` (`AVAILABLE_MODES`), then branch on the mode id in `Songster.tsx` to render the new component alongside `ClassicGame`/`CarouselGame`.
 
 ## Important: Git Operations
 
