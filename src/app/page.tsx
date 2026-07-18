@@ -6,6 +6,12 @@ import Game from "@/components/Game";
 import CarouselGame from "@/components/CarouselGame";
 import { Playfair_Display } from "next/font/google";
 import { AVAILABLE_MODES } from "@/lib/modes";
+import ArtNouveauBackground from "@/components/ArtNouveauBackground";
+
+const multicolorTitleStyle = {
+  backgroundImage:
+    "linear-gradient(90deg, #BF953F, #1B998B, #6A4C93, #C81D6B, #2E6F95, #BF953F)",
+};
 
 const playfair = Playfair_Display({ subsets: ["latin"] });
 
@@ -47,13 +53,17 @@ export default function Home() {
 
   if (!session) {
     return (
-      <main className="flex h-[100dvh] overflow-hidden touch-none flex-col items-center justify-center p-6 bg-[#0a0a0a] text-foreground">
-        <h1 className={`${playfair.className} text-6xl font-black mb-12 text-center bg-clip-text text-transparent bg-gradient-to-r from-[#BF953F] via-[#FCF6BA] to-[#B38728] drop-shadow-sm`}>
-          Hitsteban
+      <main className="relative flex h-[100dvh] overflow-hidden touch-none flex-col items-center justify-center p-6 bg-[#0a0a0a] text-foreground">
+        <ArtNouveauBackground />
+        <h1
+          style={multicolorTitleStyle}
+          className={`${playfair.className} relative z-10 text-6xl font-black mb-12 text-center bg-clip-text text-transparent drop-shadow-sm`}
+        >
+          Playsteban
         </h1>
         <button
           onClick={() => signIn("spotify")}
-          className="px-8 py-4 bg-gradient-to-r from-[#BF953F] via-[#FCF6BA] to-[#B38728] text-black rounded-full font-bold text-lg shadow-xl shadow-[#BF953F]/20 hover:shadow-[#BF953F]/40 hover:scale-105 transition-all active:scale-95"
+          className="relative z-10 px-8 py-4 bg-gradient-to-r from-[#BF953F] via-[#FCF6BA] to-[#B38728] text-black rounded-full font-bold text-lg shadow-xl shadow-[#BF953F]/20 hover:shadow-[#BF953F]/40 hover:scale-105 transition-all active:scale-95"
         >
           Log in with Spotify Premium
         </button>
@@ -99,9 +109,10 @@ export default function Home() {
   };
 
   return (
-    <main className="flex h-[100dvh] overflow-hidden flex-col items-center justify-center p-6 bg-[#0a0a0a] text-foreground w-full">
-      <div className="absolute top-4 right-4">
-        <button 
+    <main className="relative flex h-[100dvh] overflow-hidden flex-col items-center justify-center p-6 bg-[#0a0a0a] text-foreground w-full">
+      <ArtNouveauBackground />
+      <div className="absolute top-4 right-4 z-10">
+        <button
           onClick={() => signOut()}
           className="text-sm px-4 py-2 border border-gray-600 rounded-md text-gray-400 hover:text-white hover:bg-gray-800 transition"
         >
@@ -109,9 +120,12 @@ export default function Home() {
         </button>
       </div>
 
-      <div className="w-full max-w-md mx-auto">
-        <h1 className={`${playfair.className} text-5xl font-black mb-8 text-center bg-clip-text text-transparent bg-gradient-to-r ${theme.gradient} drop-shadow-sm transition-all duration-500`}>
-          Hitsteban
+      <div className="relative z-10 w-full max-w-md mx-auto">
+        <h1
+          style={multicolorTitleStyle}
+          className={`${playfair.className} text-5xl font-black mb-8 text-center bg-clip-text text-transparent drop-shadow-sm transition-all duration-500`}
+        >
+          Playsteban
         </h1>
         
         <form onSubmit={handleStart} className="w-full flex flex-col gap-6">
