@@ -4,6 +4,7 @@ import { useSession } from "next-auth/react";
 import { useState } from "react";
 import MainMenu from "@/components/MainMenu";
 import Songster from "@/components/games/songster/Songster";
+import Tribial from "@/components/games/tribial/Tribial";
 
 /**
  * Estebox entry point / router. Estebox is a multi-game site: the main menu is
@@ -25,6 +26,10 @@ export default function Home() {
 
   if (selectedGame === "songster") {
     return <Songster onExit={() => setSelectedGame(null)} />;
+  }
+
+  if (selectedGame === "tribial") {
+    return <Tribial onExit={() => setSelectedGame(null)} />;
   }
 
   // No game selected (or an unknown id) — show the Estebox menu.

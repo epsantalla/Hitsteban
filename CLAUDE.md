@@ -6,7 +6,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Estebox** is a Next.js 14 (App Router) web app that hosts a collection of party games. It is a multi-game site: the main menu is the landing screen and each game is a self-contained module. There is no site-wide login — games opt into auth as needed.
 
-The first (currently only) game is **Songster** ("Guess the Song"): it turns a Spotify playlist into a guess-the-song game, using the Spotify Web Playback SDK to stream full tracks in-browser. Songster authenticates with Spotify OAuth via NextAuth and gates on that auth *internally* (the rest of Estebox does not require it). There is no backend database — all game state lives in React component state for the duration of a session.
+Two games currently exist:
+- **Songster** ("Guess the Song"): turns a Spotify playlist into a guess-the-song game, using the Spotify Web Playback SDK to stream full tracks in-browser. Songster authenticates with Spotify OAuth via NextAuth and gates on that auth *internally* (the rest of Estebox does not require it).
+- **Tribial**: a caveman/tribal-themed trivia game. Questions are baked into the repo as JSON (fetched from opentdb.com ahead of time, not at runtime) so they can be hand-translated to Spanish. Basic mode is hold-to-reveal: long-press ~0.6s to flip a question to its answer, long-press again to advance.
+
+There is no backend database — all game state lives in React component state for the duration of a session.
 
 > Note: the on-disk repo folder is still named `Hitsteban` (Songster/Estebox is the product rename); paths in this doc are relative to the repo root regardless of its folder name.
 
@@ -22,6 +26,8 @@ npm run lint      # next lint (eslint-config-next)
 
 There is no test suite in this repo (no test runner configured, no test files).
 
+**Do not run `npm install`/`npm run build`/`npm run lint`/`npm run dev` to verify changes, and do not go looking for a local node/npm install.** This user does not verify locally — they push and check the result on Vercel. Skip local verification entirely unless the user explicitly asks you to run one of these commands.
+
 Requires a `.env.local` (see `.env.local.example`) with `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET`, `NEXTAUTH_SECRET`, and `NEXTAUTH_URL`. Playing a track requires a Spotify **Premium** account (Web Playback SDK limitation). The Spotify app's redirect URI must be `http://127.0.0.1:3000/api/auth/callback/spotify` in dev.
 
 ## Architecture
@@ -30,13 +36,20 @@ This is effectively a single-page client app; almost every component is `"use cl
 
 - **`src/app/api/auth/[...nextauth]/route.ts`** — the only server-side logic. Configures the NextAuth Spotify provider and scopes (`streaming`, `user-read-email`, `user-read-private`, `playlist-read-private`, `playlist-read-collaborative`). Its `jwt` callback stores `accessToken`/`refreshToken`/`accessTokenExpires` on the token and transparently refreshes the access token via Spotify's token endpoint when expired; the `session` callback exposes `accessToken` (and refresh errors) on the session object. Session typing is augmented in `src/types/next-auth.d.ts`.
 - **`src/components/Providers.tsx`** — wraps the app in `SessionProvider` with a 50-minute `refetchInterval` to keep the session/token fresh.
-- **`src/app/page.tsx`** — thin router. Waits for `useSession()` to finish loading, then holds `selectedGame` state (no URL routing): `null` (or an unknown id) shows `MainMenu`; a known id renders that game's module (currently `selectedGame === "songster"` → `Songster`). It intentionally holds **no** Spotify/auth logic — that lives inside the game module.
-- **`src/components/MainMenu.tsx`** — the Estebox landing screen / game picker. Lists entries from `src/lib/games.ts` (`AVAILABLE_GAMES`; currently just "Songster") and calls `onSelectGame(id)`. Self-contained: it reads `useSession()` itself and shows a "Sign Out" button only when a session exists (auth is account-level, established by a game).
+- **`src/app/page.tsx`** — thin router. Waits for `useSession()` to finish loading, then holds `selectedGame` state (no URL routing): `null` (or an unknown id) shows `MainMenu`; a known id renders that game's module (`selectedGame === "songster"` → `Songster`, `selectedGame === "tribial"` → `Tribial`). It intentionally holds **no** Spotify/auth logic — that lives inside each game module.
+- **`src/components/MainMenu.tsx`** — the Estebox landing screen / game picker. Lists entries from `src/lib/games.ts` (`AVAILABLE_GAMES`) and calls `onSelectGame(id)`. Self-contained: it reads `useSession()` itself and shows a "Sign Out" button only when a session exists (auth is account-level, established by a game).
 - **`src/components/games/songster/`** — the self-contained Songster game module:
   - **`Songster.tsx`** — Songster's entry point. Owns its Spotify auth gate (shows a "Log in with Spotify Premium" screen when signed out), the `RefreshAccessTokenError` re-auth, playlist fetching (client-side `fetch`, no server proxy), pick/paste playlist (a regex extracts the ID from full playlist URLs/URIs), and mode selection from `./modes`; then renders `ClassicGame` or `CarouselGame`. `onExit` returns to the Estebox menu.
   - **`ClassicGame.tsx`** — "Classic" solo mode: hold-to-reveal a track, hold again to advance. Consumes the shared Spotify hooks (below) and only owns its reveal/advance UI.
   - **`CarouselGame.tsx`** — "Carousel" mode: turn-based multiplayer with a per-turn countdown timer, click-to-assign scoring icons (year/title/artist) per song, and a leaderboard between songs. Also built on the shared hooks; owns only the turn/scoring/leaderboard logic.
   - **`modes.ts`** — Songster's own mode registry (`AVAILABLE_MODES`).
+- **`src/components/games/tribial/`** — the self-contained Tribial game module:
+  - **`Tribial.tsx`** — Tribial's entry point. No auth gate (trivia needs none). Owns mode selection from `./modes`, shuffles `ALL_QUESTIONS` into a deck on Start, then renders `BasicGame`. `onExit` returns to the Estebox menu.
+  - **`BasicGame.tsx`** — "Basic" mode: hold-to-reveal a question, hold again to advance. Same long-press mechanic/timing as Songster's `ClassicGame` (600ms `pointerdown` timer via `holdTimerRef`), reimplemented locally since there's no Spotify state to coordinate with.
+  - **`questions.json`** — baked trivia data in OpenTDB's native shape (`{ results: [...] }`), multiple-choice only. Fetched ahead of time from `opentdb.com/api.php` (not called at runtime) and hand-translated to Spanish. `incorrect_answers` is kept per question (unused by Basic mode today) for a future "show options" config.
+  - **`questions.ts`** — `ALL_QUESTIONS` (the JSON, filtered defensively to `type === "multiple"`), `shuffle` (Fisher-Yates, same algorithm as `lib/spotify/playlist.ts`), and `decodeEntities` (decodes the HTML entities OpenTDB emits, e.g. `&quot;`/`&#039;`/accented-letter entities — regex/map based so it's SSR-safe).
+  - **`TribalBackground.tsx`** — decorative inline-SVG backdrop (leopard-print pattern + two flickering torches), mirrors `src/components/ArtNouveauBackground.tsx`. Pure CSS/SVG, no image files.
+  - **`modes.ts`** — Tribial's own mode registry (`AVAILABLE_MODES`); currently just "basic".
 
 ### Shared Spotify layer (`src/lib/spotify/` + `src/hooks/`)
 
@@ -60,6 +73,10 @@ A new mode/game should reuse these hooks rather than re-implementing playlist/ye
 ### Adding a new Songster game mode
 
 Register it in `src/components/games/songster/modes.ts` (`AVAILABLE_MODES`), then branch on the mode id in `Songster.tsx` to render the new component alongside `ClassicGame`/`CarouselGame`.
+
+### Adding a new Tribial game mode
+
+Register it in `src/components/games/tribial/modes.ts` (`AVAILABLE_MODES`), then branch on the mode id in `Tribial.tsx` to render the new component alongside `BasicGame`. Reuse `ALL_QUESTIONS`/`shuffle`/`decodeEntities` from `./questions` rather than re-deriving question data.
 
 ## Important: Git Operations
 
