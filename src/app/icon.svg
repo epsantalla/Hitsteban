@@ -7,47 +7,49 @@
     </linearGradient>
     <radialGradient id="glow" cx="50%" cy="50%" r="50%">
       <stop offset="0%" stop-color="#FCF6BA" stop-opacity="0.95" />
-      <stop offset="45%" stop-color="#BF953F" stop-opacity="0.55" />
+      <stop offset="45%" stop-color="#BF953F" stop-opacity="0.5" />
       <stop offset="100%" stop-color="#BF953F" stop-opacity="0" />
     </radialGradient>
   </defs>
 
   <!-- Badge backdrop -->
-  <circle cx="50" cy="50" r="48" fill="#141414" stroke="#2c2c2c" stroke-width="2"/>
+  <circle cx="50" cy="50" r="48" fill="#100c07" stroke="#2c2418" stroke-width="2"/>
 
-  <!-- Escaping glow -->
-  <circle cx="50" cy="38" r="26" fill="url(#glow)"/>
+  <!-- Domed lid, thrown open behind the box -->
+  <path d="M32 55 C32 33, 40 22, 50 22 C60 22, 68 33, 68 55 Z" fill="#1a140c" stroke="url(#gold)" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M37 55 C37 35, 44 28, 50 28 C56 28, 63 35, 63 55" fill="none" stroke="url(#gold)" stroke-width="0.8" opacity="0.5"/>
+  <circle cx="50" cy="20" r="2.2" fill="url(#gold)"/>
 
-  <!-- Colored wisps escaping the box -->
-  <g stroke-linecap="round" fill="none" opacity="0.85">
-    <path d="M 44 34 C 40 24, 34 20, 30 14" stroke="#1B998B" stroke-width="2"/>
-    <path d="M 56 32 C 60 22, 58 16, 62 8" stroke="#C81D6B" stroke-width="2"/>
-    <path d="M 50 28 C 50 18, 46 12, 48 4" stroke="#6A4C93" stroke-width="2"/>
+  <!-- Light escaping from the open box -->
+  <ellipse cx="50" cy="52" rx="26" ry="16" fill="url(#glow)"/>
+
+  <!-- Rising rays + coloured motes -->
+  <g fill="none" stroke-width="1.4" stroke-linecap="round" opacity="0.55">
+    <path d="M50 50 L40 32" stroke="#BF953F"/>
+    <path d="M50 50 L50 26" stroke="#BF953F"/>
+    <path d="M50 50 L60 32" stroke="#BF953F"/>
   </g>
-  <circle cx="29" cy="12" r="1.6" fill="#1B998B"/>
-  <circle cx="63" cy="6" r="1.6" fill="#C81D6B"/>
-  <circle cx="48" cy="3" r="1.4" fill="#6A4C93"/>
+  <circle cx="39" cy="38" r="1.8" fill="#1B998B"/>
+  <circle cx="61" cy="35" r="1.8" fill="#C81D6B"/>
+  <circle cx="50" cy="30" r="1.6" fill="#6A4C93"/>
+  <circle cx="44" cy="44" r="1.4" fill="#2E6F95"/>
+  <circle cx="57" cy="43" r="1.4" fill="#D4AF37"/>
 
-  <!-- Lid, propped open at the back -->
-  <polygon points="34,50 74,50 70,20 38,20" fill="#1c1712" stroke="url(#gold)" stroke-width="1.6"/>
-  <line x1="38" y1="30" x2="70" y2="30" stroke="url(#gold)" stroke-width="1" opacity="0.6"/>
-  <circle cx="54" cy="35" r="2.6" fill="url(#gold)"/>
+  <!-- Box mouth (opening rim) -->
+  <ellipse cx="50" cy="54" rx="28" ry="5.5" fill="#0a0a0a" stroke="url(#gold)" stroke-width="1.6"/>
 
-  <!-- Box opening rim -->
-  <polygon points="30,50 78,50 72,57 36,57" fill="url(#gold)"/>
-  <polygon points="36,57 72,57 72,54 36,54" fill="#0a0a0a"/>
+  <!-- Chest body / front wall -->
+  <path d="M23 54 H77 V80 Q77 84 73 84 H27 Q23 84 23 80 Z" fill="#1a140c" stroke="url(#gold)" stroke-width="1.6" stroke-linejoin="round"/>
 
-  <!-- Box body -->
-  <rect x="26" y="57" width="48" height="27" rx="3" fill="#1c1712" stroke="url(#gold)" stroke-width="1.6"/>
-  <line x1="26" y1="67" x2="74" y2="67" stroke="url(#gold)" stroke-width="1" opacity="0.5"/>
-  <line x1="26" y1="76" x2="74" y2="76" stroke="url(#gold)" stroke-width="1" opacity="0.5"/>
+  <!-- Greek key (meander) band -->
+  <g fill="none" stroke="url(#gold)" stroke-width="1.1">
+    <path d="M26.5,62.5 H35.5 V71.5 H29.5 V65.5 H33 V69"/>
+    <path d="M39,62.5 H48 V71.5 H42 V65.5 H45.5 V69"/>
+    <path d="M51.5,62.5 H60.5 V71.5 H54.5 V65.5 H58 V69"/>
+    <path d="M64,62.5 H73 V71.5 H67 V65.5 H70.5 V69"/>
+  </g>
 
-  <!-- Corner studs -->
-  <circle cx="30" cy="61" r="1.4" fill="url(#gold)"/>
-  <circle cx="70" cy="61" r="1.4" fill="url(#gold)"/>
-  <circle cx="30" cy="80" r="1.4" fill="url(#gold)"/>
-  <circle cx="70" cy="80" r="1.4" fill="url(#gold)"/>
-
-  <!-- Front clasp -->
-  <rect x="47" y="60" width="6" height="10" rx="1.5" fill="url(#gold)"/>
+  <!-- Clasp + base moulding -->
+  <rect x="46" y="55" width="8" height="9" rx="1.5" fill="url(#gold)"/>
+  <rect x="21" y="84" width="58" height="4" rx="1.5" fill="url(#gold)"/>
 </svg>

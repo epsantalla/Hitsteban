@@ -56,13 +56,10 @@ export default function MainMenu({ onSelectGame }: MainMenuProps) {
 
         <h1
           style={multicolorTitleStyle}
-          className={`${cinzel.className} text-4xl sm:text-5xl font-bold mb-1 text-center bg-clip-text text-transparent drop-shadow-sm tracking-wide`}
+          className={`${cinzel.className} text-4xl sm:text-5xl font-bold mb-10 text-center bg-clip-text text-transparent drop-shadow-sm tracking-wide`}
         >
           Estebox
         </h1>
-        <p className="text-xs uppercase tracking-[0.3em] text-gray-500 mb-10">
-          Una caja, muchos juegos
-        </p>
 
         <div className="w-full flex flex-col gap-4">
           {saved && savedGameName && (
