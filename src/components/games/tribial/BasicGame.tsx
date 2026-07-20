@@ -1,18 +1,18 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import TribalBackground from "./TribalBackground";
 import { AVAILABLE_MODES } from "./modes";
-import { decodeEntities } from "./questions";
+import { decodeEntities, shuffle } from "./questions";
 import { TriviaQuestion } from "./types";
 
 /**
  * Tribial "Basic" mode: hold-to-reveal trivia.
  *
  * The long-press mechanic mirrors Songster's ClassicGame: hold ~0.6s to reveal
- * the answer, hold again to advance. Only the question and the correct answer
- * are shown — the incorrect answers stay hidden (kept in the data for a future
- * "show options" config).
+ * the answer, hold again to advance. The multiple-choice options (correct +
+ * incorrect, shuffled) are shown alongside the question; holding highlights the
+ * correct one. Category/difficulty are intentionally not shown.
  */
 export default function BasicGame({ questions, mode, onExit, onComplete }: {
   questions: TriviaQuestion[];
@@ -67,6 +67,14 @@ export default function BasicGame({ questions, mode, onExit, onComplete }: {
     };
   }, []);
 
+  const q = questions[currentIndex];
+  // useMemo must run on every render (Rules of Hooks), so it guards against an
+  // empty deck itself rather than relying on the early return below.
+  const options = useMemo(
+    () => (q ? shuffle([q.correct_answer, ...q.incorrect_answers]) : []),
+    [q]
+  );
+
   // Guard against an empty deck (shouldn't happen — Start gates on count > 0).
   if (questions.length === 0) {
     return (
@@ -77,17 +85,10 @@ export default function BasicGame({ questions, mode, onExit, onComplete }: {
     );
   }
 
-  const q = questions[currentIndex];
   const modeName = AVAILABLE_MODES.find((m) => m.id === mode)?.name || mode;
 
   return (
     <>
-      <style>{`
-        @keyframes tribial-reveal {
-          from { opacity: 0; transform: scale(0.92); }
-          to   { opacity: 1; transform: scale(1); }
-        }
-      `}</style>
       <div
         className="fixed inset-0 bg-[#12100E] flex flex-col items-center justify-center select-none touch-none overflow-hidden text-[#F5ECD9]"
         onPointerDown={handlePointerDown}
@@ -124,31 +125,38 @@ export default function BasicGame({ questions, mode, onExit, onComplete }: {
         </div>
 
         <div className="relative z-10 flex flex-col items-center justify-center w-full max-w-lg px-6 text-center pointer-events-none">
-          {revealState === 'HIDDEN' ? (
-            <div className={`flex flex-col items-center w-full transition-transform duration-500 ${isHolding ? 'scale-105' : 'scale-100'}`}>
-              <span className="mb-6 px-3 py-1 rounded-full border border-[#3A2C18] bg-[#1B140D]/70 text-[11px] uppercase tracking-widest text-[#E8681A]">
-                {decodeEntities(q.category)} · {q.difficulty}
-              </span>
-              <h2 className="text-3xl md:text-4xl font-bold text-[#F5ECD9] tracking-tight leading-snug mb-12">
-                {decodeEntities(q.question)}
-              </h2>
-              <p className={`text-sm uppercase tracking-widest transition-colors duration-300 ${isHolding ? 'text-[#F2A03D]' : 'text-[#8A7A63]'}`}>
-                Mantén para revelar
-              </p>
+          <div
+            className={`flex flex-col items-center w-full transition-transform duration-500 ${
+              isHolding ? (revealState === 'HIDDEN' ? 'scale-105' : 'scale-95') : 'scale-100'
+            }`}
+          >
+            <h2 className="text-2xl md:text-3xl font-bold text-[#F5ECD9] tracking-tight leading-snug mb-8">
+              {decodeEntities(q.question)}
+            </h2>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full mb-8">
+              {options.map((opt, i) => {
+                const isCorrect = opt === q.correct_answer;
+                const revealed = revealState === 'REVEALED';
+                return (
+                  <div
+                    key={i}
+                    className={`px-4 py-3 rounded-lg border text-sm sm:text-base transition-all duration-300 ${
+                      revealed && isCorrect
+                        ? 'border-[#E8681A] bg-gradient-to-r from-[#F2A03D]/20 via-[#E8681A]/20 to-[#B23A0E]/20 text-[#F5ECD9] font-bold shadow-[0_0_16px_rgba(232,104,26,0.4)]'
+                        : 'border-[#3A2C18] bg-[#1B140D]/60 text-[#F5ECD9]/80'
+                    }`}
+                  >
+                    {decodeEntities(opt)}
+                  </div>
+                );
+              })}
             </div>
-          ) : (
-            <div style={{ animation: 'tribial-reveal 320ms ease-out' }} className="flex flex-col items-center w-full">
-              <div className={`flex flex-col items-center w-full transition-transform duration-500 ${isHolding ? 'scale-95' : 'scale-100'}`}>
-                <span className="mb-4 text-xs uppercase tracking-[0.3em] text-[#8A7A63]">Respuesta</span>
-                <h2 className="text-4xl md:text-5xl font-bold tracking-tight leading-tight mb-16 bg-clip-text text-transparent bg-gradient-to-r from-[#F2A03D] via-[#F5ECD9] to-[#E8681A]">
-                  {decodeEntities(q.correct_answer)}
-                </h2>
-                <p className={`text-sm uppercase tracking-widest transition-colors duration-300 ${isHolding ? 'text-[#F2A03D]' : 'text-[#8A7A63]'}`}>
-                  Mantén para la siguiente
-                </p>
-              </div>
-            </div>
-          )}
+
+            <p className={`text-sm uppercase tracking-widest transition-colors duration-300 ${isHolding ? 'text-[#F2A03D]' : 'text-[#8A7A63]'}`}>
+              {revealState === 'HIDDEN' ? 'Mantén para revelar' : 'Mantén para la siguiente'}
+            </p>
+          </div>
         </div>
       </div>
     </>

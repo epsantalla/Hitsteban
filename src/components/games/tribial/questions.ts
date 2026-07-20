@@ -11,6 +11,17 @@ export const ALL_QUESTIONS: TriviaQuestion[] = (questionData as QuestionFile).re
   (q): q is TriviaQuestion => q.type === "multiple"
 );
 
+/** All distinct categories present in the baked-in question set, sorted alphabetically. */
+export const ALL_CATEGORIES: string[] = Array.from(
+  new Set(ALL_QUESTIONS.map((q) => q.category))
+).sort((a, b) => a.localeCompare(b));
+
+/** All distinct difficulties present in the baked-in question set, in easy-to-hard order. */
+export const DIFFICULTY_ORDER = ["easy", "medium", "hard"] as const;
+export const ALL_DIFFICULTIES: string[] = DIFFICULTY_ORDER.filter((d) =>
+  ALL_QUESTIONS.some((q) => q.difficulty === d)
+);
+
 /**
  * Fisher-Yates shuffle on a copy (does not mutate the input). Same algorithm as
  * the Spotify playlist shuffle in `lib/spotify/playlist.ts`, generalized here.
