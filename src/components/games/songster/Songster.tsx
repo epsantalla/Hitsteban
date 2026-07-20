@@ -132,7 +132,7 @@ export default function Songster({ onExit }: { onExit: () => void }) {
             &larr; Menú
           </button>
         </div>
-        <h1 className={`${playfair.className} text-6xl font-black mb-4 text-center bg-clip-text text-transparent bg-gradient-to-r from-[#BF953F] via-[#FCF6BA] to-[#B38728] drop-shadow-sm`}>
+        <h1 className={`${playfair.className} text-6xl font-black leading-[1.2] pb-2 mb-4 text-center bg-clip-text text-transparent bg-gradient-to-r from-[#BF953F] via-[#FCF6BA] to-[#B38728] drop-shadow-sm`}>
           Songster
         </h1>
         <p className="text-gray-400 mb-12 text-center max-w-sm">
@@ -239,7 +239,7 @@ export default function Songster({ onExit }: { onExit: () => void }) {
       </div>
 
       <div className="w-full max-w-md mx-auto">
-        <h1 className={`${playfair.className} text-5xl font-black mb-8 text-center bg-clip-text text-transparent bg-gradient-to-r ${theme.gradient} drop-shadow-sm transition-all duration-500`}>
+        <h1 className={`${playfair.className} text-5xl font-black leading-[1.2] pb-2 mb-6 text-center bg-clip-text text-transparent bg-gradient-to-r ${theme.gradient} drop-shadow-sm transition-all duration-500`}>
           Songster
         </h1>
 

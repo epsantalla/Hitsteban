@@ -5,7 +5,7 @@
  * aesthetic: a warm ember-dark base, slow-breathing radial glows, a large
  * radiating "sun" emblem rising from the bottom, a seamless mudcloth-style line
  * motif tiled across, and a faint film grain for texture. Pure inline SVG + CSS
- * (no image files), mirroring the convention of `ArtNouveauBackground`.
+ * (no image files), mirroring the convention of `PandoraBackground`.
  *
  * Everything animates slowly (breathe/drift) rather than flickering, and the
  * geometry is thin-line + minimal on purpose — the goal is "refined tribal
