@@ -7,6 +7,7 @@ import { useOriginalYear } from "@/hooks/useOriginalYear";
 import { useSpotifyPlayer } from "@/hooks/useSpotifyPlayer";
 import { Track } from "@/lib/spotify/types";
 import { Player, CarouselSettings, CarouselSavedState } from "./savedState";
+import FitText from "@/components/FitText";
 
 interface CarouselInitialState {
   currentIndex: number;
@@ -475,7 +476,7 @@ export default function CarouselGame({ playlistId, accessToken, onExit, initialS
       {carouselPhase === 'intro' && (
         <div className="flex-1 flex flex-col items-center justify-center px-6 text-center animate-in fade-in duration-500 w-full">
           <h3 className="text-2xl text-gray-400 tracking-widest uppercase mb-4">Get Ready</h3>
-          <h2 className="text-7xl font-bold text-white mb-6 gem-text drop-shadow-lg truncate w-full max-w-[90vw] px-4 pb-2">{players[activePlayerIndex].name}</h2>
+          <FitText max={72} min={28} className="mb-6 px-4 pb-2" textClassName="font-bold gem-text drop-shadow-lg">{players[activePlayerIndex].name}</FitText>
           <div className="mt-8 flex items-center justify-center">
             <Loader2 className="animate-spin text-[#B81137] w-12 h-12" />
           </div>
@@ -486,7 +487,7 @@ export default function CarouselGame({ playlistId, accessToken, onExit, initialS
         <div className="flex-1 flex flex-col items-center justify-center px-6 text-center w-full">
           <div className="mb-12 w-full flex flex-col items-center">
             <h3 className="text-xl text-gray-400 tracking-widest uppercase mb-2">Current Player</h3>
-            <h2 className="text-7xl font-bold text-white mb-6 tracking-tight drop-shadow-md truncate w-full max-w-[90vw] px-4 pb-2">{players[activePlayerIndex].name}</h2>
+            <FitText max={72} min={28} className="mb-6 px-4 pb-2" textClassName="font-bold text-white tracking-tight drop-shadow-md">{players[activePlayerIndex].name}</FitText>
             <div className={`text-[6rem] leading-none font-mono font-bold transition-colors ${timeLeft <= 5 ? 'text-red-500 animate-pulse' : 'text-white drop-shadow-md'}`}>
               00:{timeLeft.toString().padStart(2, '0')}
             </div>

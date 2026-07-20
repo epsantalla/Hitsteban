@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { Rye } from "next/font/google";
 import BasicGame from "./BasicGame";
+import ClassicGame from "./ClassicGame";
 import TribalBackground from "./TribalBackground";
 import { AVAILABLE_MODES } from "./modes";
 import { ALL_CATEGORIES, ALL_DIFFICULTIES, ALL_QUESTIONS, decodeEntities, shuffle } from "./questions";
@@ -67,12 +68,23 @@ export default function Tribial({ onExit }: { onExit: () => void }) {
 
   const handleStart = (e: React.FormEvent) => {
     e.preventDefault();
+    // Classic mode manages its own players/difficulty/categories internally, so
+    // it starts straight from ALL_QUESTIONS regardless of the deck filters.
+    if (selectedMode === "classic") {
+      setIsGameStarted(true);
+      return;
+    }
     if (filteredQuestions.length === 0) return;
     setDeck(shuffle(filteredQuestions));
     setIsGameStarted(true);
   };
 
   if (isGameStarted) {
+    if (selectedMode === "classic") {
+      return (
+        <ClassicGame questions={ALL_QUESTIONS} onExit={() => setIsGameStarted(false)} />
+      );
+    }
     return (
       <BasicGame
         questions={deck}
@@ -97,7 +109,7 @@ export default function Tribial({ onExit }: { onExit: () => void }) {
         </button>
       </div>
 
-      <div className="absolute top-4 right-4 z-10">
+      <div className={`absolute top-4 right-4 z-10 ${selectedMode === "classic" ? "hidden" : ""}`}>
         <button
           onClick={() => setShowSettings(true)}
           aria-label="Configurar preguntas"
@@ -249,7 +261,9 @@ export default function Tribial({ onExit }: { onExit: () => void }) {
           </div>
 
           <p className="text-center text-sm text-[#8A7A63]">
-            {count > 0 ? (
+            {selectedMode === "classic" ? (
+              "Introduce los jugadores en el siguiente paso"
+            ) : count > 0 ? (
               <>
                 <span className="text-[#F5ECD9] font-bold">{count}</span> preguntas listas
               </>
@@ -260,7 +274,7 @@ export default function Tribial({ onExit }: { onExit: () => void }) {
 
           <button
             type="submit"
-            disabled={count === 0}
+            disabled={selectedMode !== "classic" && count === 0}
             className="w-full py-4 bg-gradient-to-r from-[#F2A03D] via-[#E8681A] to-[#B23A0E] text-black rounded-xl font-bold text-lg shadow-xl shadow-[#E8681A]/20 hover:shadow-[#E8681A]/40 hover:scale-[1.02] transition-all active:scale-95 disabled:opacity-40 disabled:hover:scale-100 disabled:cursor-not-allowed"
           >
             Empezar
