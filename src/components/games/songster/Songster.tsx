@@ -115,7 +115,7 @@ export default function Songster({ onExit }: { onExit: () => void }) {
   if (status === "loading") {
     return (
       <main className="flex h-[100dvh] overflow-hidden touch-none flex-col items-center justify-center bg-[#0a0a0a] text-foreground">
-        <p className="text-xl text-[#BF953F] animate-pulse">Loading...</p>
+        <p className="text-xl text-[#BF953F] animate-pulse">Cargando...</p>
       </main>
     );
   }
@@ -129,20 +129,20 @@ export default function Songster({ onExit }: { onExit: () => void }) {
             onClick={onExit}
             className="text-sm px-4 py-2 border border-gray-600 rounded-md text-gray-400 hover:text-white hover:bg-gray-800 transition"
           >
-            &larr; Menu
+            &larr; Menú
           </button>
         </div>
         <h1 className={`${playfair.className} text-6xl font-black mb-4 text-center bg-clip-text text-transparent bg-gradient-to-r from-[#BF953F] via-[#FCF6BA] to-[#B38728] drop-shadow-sm`}>
           Songster
         </h1>
         <p className="text-gray-400 mb-12 text-center max-w-sm">
-          Songster streams full tracks in your browser, so it needs a Spotify Premium account.
+          Songster reproduce canciones completas en tu navegador, así que necesita una cuenta de Spotify Premium.
         </p>
         <button
           onClick={() => signIn("spotify")}
           className="px-8 py-4 bg-gradient-to-r from-[#BF953F] via-[#FCF6BA] to-[#B38728] text-black rounded-full font-bold text-lg shadow-xl shadow-[#BF953F]/20 hover:shadow-[#BF953F]/40 hover:scale-105 transition-all active:scale-95"
         >
-          Log in with Spotify Premium
+          Iniciar sesión con Spotify Premium
         </button>
       </main>
     );
@@ -226,7 +226,7 @@ export default function Songster({ onExit }: { onExit: () => void }) {
           onClick={onExit}
           className="text-sm px-4 py-2 border border-gray-600 rounded-md text-gray-400 hover:text-white hover:bg-gray-800 transition"
         >
-          &larr; Menu
+          &larr; Menú
         </button>
       </div>
       <div className="absolute top-4 right-4">
@@ -234,7 +234,7 @@ export default function Songster({ onExit }: { onExit: () => void }) {
           onClick={() => signOut()}
           className="text-sm px-4 py-2 border border-gray-600 rounded-md text-gray-400 hover:text-white hover:bg-gray-800 transition"
         >
-          Sign Out
+          Cerrar sesión
         </button>
       </div>
 
@@ -245,7 +245,7 @@ export default function Songster({ onExit }: { onExit: () => void }) {
 
         {resume && (
           <div className="mb-8 p-4 rounded-xl bg-[#111] border border-[#BF953F]/40 shadow-lg shadow-black/40">
-            <p className="text-xs uppercase tracking-widest text-gray-500 mb-1">Game in progress</p>
+            <p className="text-xs uppercase tracking-widest text-gray-500 mb-1">Partida en curso</p>
             <p className="text-white font-medium mb-4">{resume.label}</p>
             <div className="flex gap-3">
               <button
@@ -253,14 +253,14 @@ export default function Songster({ onExit }: { onExit: () => void }) {
                 onClick={handleResume}
                 className="flex-1 py-3 rounded-lg bg-gradient-to-r from-[#BF953F] via-[#FCF6BA] to-[#B38728] text-black font-bold transition-all hover:scale-[1.02] active:scale-95"
               >
-                Resume
+                Reanudar
               </button>
               <button
                 type="button"
                 onClick={handleDiscard}
                 className="px-4 py-3 rounded-lg border border-gray-700 text-gray-400 hover:text-white hover:bg-gray-800 transition"
               >
-                Discard
+                Descartar
               </button>
             </div>
           </div>
@@ -269,7 +269,7 @@ export default function Songster({ onExit }: { onExit: () => void }) {
         <form onSubmit={handleStart} className="w-full flex flex-col gap-6">
           <div className="flex flex-col gap-2">
             <label htmlFor="mode" className={`text-sm ${theme.text80} font-medium transition-colors duration-500`}>
-              Game Mode
+              Modo de juego
             </label>
             <div className="relative">
               <select
@@ -297,19 +297,19 @@ export default function Songster({ onExit }: { onExit: () => void }) {
 
           <div className="flex flex-col gap-2">
             <label htmlFor="playlist" className={`text-sm ${theme.text80} font-medium transition-colors duration-500`}>
-              Spotify Playlist ID
+              ID de playlist de Spotify
             </label>
             <input
               id="playlist"
               type="text"
-              placeholder="e.g. 37i9dQZF1DXcBWIGoYBM5M"
+              placeholder="ej. 37i9dQZF1DXcBWIGoYBM5M"
               value={playlistId}
               onChange={(e) => setPlaylistId(e.target.value)}
               className={`px-4 py-4 bg-[#111] border border-gray-800 rounded-xl focus:outline-none focus:ring-2 ${theme.ring} text-white placeholder-gray-600 shadow-inner transition-shadow duration-500`}
               required
             />
             <p className="text-xs text-gray-500 mt-1">
-              You can find the Playlist ID in the Spotify URL or Share link.
+              Puedes encontrar el ID de la playlist en la URL de Spotify o en el enlace para compartir.
             </p>
           </div>
 
@@ -317,7 +317,7 @@ export default function Songster({ onExit }: { onExit: () => void }) {
             type="submit"
             className={`w-full py-4 bg-gradient-to-r ${theme.gradient} ${theme.buttonText} rounded-xl font-bold text-lg shadow-xl ${theme.shadow} ${theme.hoverShadow} hover:scale-[1.02] transition-all duration-500 active:scale-95`}
           >
-            Start Game
+            Empezar partida
           </button>
         </form>
 
@@ -325,7 +325,7 @@ export default function Songster({ onExit }: { onExit: () => void }) {
           <div className="w-full mt-8">
             <div className="flex items-center justify-center gap-4 mb-6 opacity-50">
               <div className="h-px bg-white flex-1"></div>
-              <span className="text-xs tracking-widest uppercase font-bold text-white">Or select from library</span>
+              <span className="text-xs tracking-widest uppercase font-bold text-white">O elige de tu biblioteca</span>
               <div className="h-px bg-white flex-1"></div>
             </div>
 

@@ -113,10 +113,10 @@ export default function CarouselGame({ playlistId, accessToken, onExit, initialS
   const startGame = () => {
     if (isFetchingTracks) return;
 
-    // Convert empty names to "Player X"
+    // Convert empty names to "Jugador X"
     const finalPlayers = players.map((p, i) => ({
       ...p,
-      name: p.name.trim() === "" ? `Player ${i + 1}` : p.name.trim()
+      name: p.name.trim() === "" ? `Jugador ${i + 1}` : p.name.trim()
     }));
 
     if (finalPlayers.length < 2) return;
@@ -281,7 +281,7 @@ export default function CarouselGame({ playlistId, accessToken, onExit, initialS
   // --- RENDERING ---
 
   if (errorMsg) return <div className="flex flex-col items-center justify-center min-h-screen text-red-500 bg-[#0a0a0a]">{errorMsg}</div>;
-  if (status === 'INITIALIZING_SDK') return <div className="flex flex-col items-center justify-center min-h-screen text-[#B81137] bg-[#0a0a0a]"><Loader2 className="animate-spin w-12 h-12 mb-4" />Loading...</div>;
+  if (status === 'INITIALIZING_SDK') return <div className="flex flex-col items-center justify-center min-h-screen text-[#B81137] bg-[#0a0a0a]"><Loader2 className="animate-spin w-12 h-12 mb-4" />Cargando...</div>;
 
   // Resume screen: skip name entry, keep the saved players/scores, and continue
   // the current song. Playback can't auto-start, so we still need this tap.
@@ -306,13 +306,13 @@ export default function CarouselGame({ playlistId, accessToken, onExit, initialS
 
         <div className="absolute top-4 left-4 z-40">
           <button onClick={onExit} className="text-sm px-4 py-2 border border-gray-700 rounded text-gray-400 hover:text-white hover:bg-gray-800 transition">
-            &larr; Menu
+            &larr; Menú
           </button>
         </div>
 
-        <h2 className="text-4xl font-black mb-2 gem-text uppercase tracking-widest mt-4">Resume Carousel</h2>
+        <h2 className="text-4xl font-black mb-2 gem-text uppercase tracking-widest mt-4">Reanudar Carrusel</h2>
         <p className="text-sm text-gray-400 mb-8 text-center max-w-sm">
-          Song {Math.min(currentIndex + 1, tracks.length)} of {tracks.length} · current standings
+          Canción {Math.min(currentIndex + 1, tracks.length)} de {tracks.length} · clasificación actual
         </p>
 
         <div className="w-full max-w-sm flex flex-col gap-3 mb-8">
@@ -326,7 +326,7 @@ export default function CarouselGame({ playlistId, accessToken, onExit, initialS
         </div>
 
         <button onClick={resumeGame} disabled={isFetchingTracks} className={`w-full max-w-sm py-4 text-white font-bold rounded-xl text-lg transition ${isFetchingTracks ? 'bg-gray-800 text-gray-500 cursor-not-allowed border border-gray-700' : 'gem-bg active:scale-95 shadow-lg shadow-[#B81137]/20'}`}>
-          {isFetchingTracks ? <span className="flex items-center justify-center gap-2"><Loader2 className="animate-spin" size={20} /> Loading Playlist...</span> : 'Continue Game'}
+          {isFetchingTracks ? <span className="flex items-center justify-center gap-2"><Loader2 className="animate-spin" size={20} /> Cargando playlist...</span> : 'Continuar partida'}
         </button>
       </div>
     );
@@ -352,7 +352,7 @@ export default function CarouselGame({ playlistId, accessToken, onExit, initialS
         `}</style>
 
         <div className="absolute top-4 right-4 z-40">
-          <button onClick={() => setShowSettings(true)} className="p-2 text-gray-500 hover:text-white transition rounded-full hover:bg-gray-800">
+          <button onClick={() => setShowSettings(true)} aria-label="Configuración" className="p-2 text-gray-500 hover:text-white transition rounded-full hover:bg-gray-800">
             <Settings size={24} />
           </button>
         </div>
@@ -361,7 +361,7 @@ export default function CarouselGame({ playlistId, accessToken, onExit, initialS
           <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
             <div className="bg-[#111] border border-gray-800 rounded-2xl w-full max-w-sm p-6 shadow-2xl">
               <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xl font-bold text-white uppercase tracking-widest gem-text">Settings</h3>
+                <h3 className="text-xl font-bold text-white uppercase tracking-widest gem-text">Configuración</h3>
                 <button onClick={() => setShowSettings(false)} className="text-gray-500 hover:text-white">
                   <X size={24} />
                 </button>
@@ -369,37 +369,37 @@ export default function CarouselGame({ playlistId, accessToken, onExit, initialS
 
               <div className="space-y-4 mb-8 text-white">
                 <div className="flex justify-between items-center">
-                  <label className="text-sm text-gray-400">First Player Time (s)</label>
+                  <label className="text-sm text-gray-400">Tiempo primer jugador (s)</label>
                   <input type="number" min="5" max="120" value={settings.initialTime} onChange={(e) => setSettings({...settings, initialTime: parseInt(e.target.value) || 0})} className="w-16 bg-[#222] border border-gray-700 rounded px-2 py-1 text-center focus:outline-none focus:border-[#B81137]" />
                 </div>
                 <div className="flex justify-between items-center">
-                  <label className="text-sm text-gray-400">Next Player Time (s)</label>
+                  <label className="text-sm text-gray-400">Tiempo siguiente jugador (s)</label>
                   <input type="number" min="5" max="120" value={settings.turnTime} onChange={(e) => setSettings({...settings, turnTime: parseInt(e.target.value) || 0})} className="w-16 bg-[#222] border border-gray-700 rounded px-2 py-1 text-center focus:outline-none focus:border-[#B81137]" />
                 </div>
                 <div className="h-px bg-gray-800 w-full my-2"></div>
                 <div className="flex justify-between items-center">
-                  <label className="text-sm text-gray-400">Year Points</label>
+                  <label className="text-sm text-gray-400">Puntos por año</label>
                   <input type="number" min="0" max="100" value={settings.ptsYear} onChange={(e) => setSettings({...settings, ptsYear: parseInt(e.target.value) || 0})} className="w-16 bg-[#222] border border-gray-700 rounded px-2 py-1 text-center focus:outline-none focus:border-[#B81137]" />
                 </div>
                 <div className="flex justify-between items-center">
-                  <label className="text-sm text-gray-400">Title Points</label>
+                  <label className="text-sm text-gray-400">Puntos por título</label>
                   <input type="number" min="0" max="100" value={settings.ptsTitle} onChange={(e) => setSettings({...settings, ptsTitle: parseInt(e.target.value) || 0})} className="w-16 bg-[#222] border border-gray-700 rounded px-2 py-1 text-center focus:outline-none focus:border-[#B81137]" />
                 </div>
                 <div className="flex justify-between items-center">
-                  <label className="text-sm text-gray-400">Artist Points</label>
+                  <label className="text-sm text-gray-400">Puntos por artista</label>
                   <input type="number" min="0" max="100" value={settings.ptsArtist} onChange={(e) => setSettings({...settings, ptsArtist: parseInt(e.target.value) || 0})} className="w-16 bg-[#222] border border-gray-700 rounded px-2 py-1 text-center focus:outline-none focus:border-[#B81137]" />
                 </div>
               </div>
               <button onClick={() => setShowSettings(false)} className="w-full py-3 bg-gray-800 hover:bg-gray-700 text-white font-bold rounded-xl transition">
-                Done
+                Listo
               </button>
             </div>
           </div>
         )}
 
-        <h2 className="text-4xl font-black mb-2 gem-text uppercase tracking-widest">Carousel Mode</h2>
+        <h2 className="text-4xl font-black mb-2 gem-text uppercase tracking-widest">Modo Carrusel</h2>
         <p className="text-sm text-gray-400 mb-8 text-center max-w-sm">
-          Enter player names in the order they are seated around the table. Minimum 2, max 12.
+          Introduce los nombres de los jugadores en el orden en que están sentados. Mínimo 2, máximo 12.
         </p>
         <div className="w-full max-w-sm flex flex-col gap-3 mb-8">
           {players.map((p, i) => (
@@ -408,7 +408,7 @@ export default function CarouselGame({ playlistId, accessToken, onExit, initialS
               <input
                 value={p.name}
                 onChange={(e) => { const newP = [...players]; newP[i].name = e.target.value; setPlayers(newP); }}
-                placeholder={`Player ${i+1}`}
+                placeholder={`Jugador ${i+1}`}
                 className="flex-1 bg-[#111] border border-gray-800 rounded-lg px-3 py-3 text-white focus:ring-1 focus:ring-[#B81137] outline-none"
               />
               {players.length > 2 && (
@@ -423,12 +423,12 @@ export default function CarouselGame({ playlistId, accessToken, onExit, initialS
               onClick={() => setPlayers([...players, {id: Date.now().toString(), name: '', score: 0}])}
               className="flex items-center justify-center gap-2 py-3 mt-2 border border-dashed border-gray-700 rounded-lg text-gray-400 hover:text-[#B81137] hover:border-[#B81137] transition"
             >
-              <Plus size={18} /> Add New
+              <Plus size={18} /> Añadir jugador
             </button>
           )}
         </div>
         <button onClick={startGame} disabled={isFetchingTracks} className={`w-full max-w-sm py-4 text-white font-bold rounded-xl text-lg transition ${isFetchingTracks ? 'bg-gray-800 text-gray-500 cursor-not-allowed border border-gray-700' : 'gem-bg active:scale-95 shadow-lg shadow-[#B81137]/20'}`}>
-          {isFetchingTracks ? <span className="flex items-center justify-center gap-2"><Loader2 className="animate-spin" size={20} /> Loading Playlist...</span> : 'Start Game'}
+          {isFetchingTracks ? <span className="flex items-center justify-center gap-2"><Loader2 className="animate-spin" size={20} /> Cargando playlist...</span> : 'Empezar'}
         </button>
       </div>
     );
@@ -467,15 +467,15 @@ export default function CarouselGame({ playlistId, accessToken, onExit, initialS
 
       <div className="absolute top-4 left-4 text-gray-500 text-sm font-mono tracking-widest pointer-events-none mt-2 flex flex-col gap-1 z-40">
         <span>{currentIndex + 1} / {tracks.length}</span>
-        <span className="text-xs opacity-50 uppercase text-[#B81137]">CAROUSEL</span>
+        <span className="text-xs opacity-50 uppercase text-[#B81137]">CARRUSEL</span>
       </div>
       <div className="absolute top-4 right-4 z-40 mt-2">
-        <button onClick={() => { player.disconnect(); onExit(); }} className="text-xs px-3 py-1 border border-gray-700 rounded text-gray-400 hover:bg-gray-800 transition">End Game</button>
+        <button onClick={() => { player.disconnect(); onExit(); }} className="text-xs px-3 py-1 border border-gray-700 rounded text-gray-400 hover:bg-gray-800 transition">Terminar partida</button>
       </div>
 
       {carouselPhase === 'intro' && (
         <div className="flex-1 flex flex-col items-center justify-center px-6 text-center animate-in fade-in duration-500 w-full">
-          <h3 className="text-2xl text-gray-400 tracking-widest uppercase mb-4">Get Ready</h3>
+          <h3 className="text-2xl text-gray-400 tracking-widest uppercase mb-4">Prepárate</h3>
           <FitText max={72} min={28} className="mb-6 px-4 pb-2" textClassName="font-bold gem-text drop-shadow-lg">{players[activePlayerIndex].name}</FitText>
           <div className="mt-8 flex items-center justify-center">
             <Loader2 className="animate-spin text-[#B81137] w-12 h-12" />
@@ -486,7 +486,7 @@ export default function CarouselGame({ playlistId, accessToken, onExit, initialS
       {carouselPhase === 'playing' && (
         <div className="flex-1 flex flex-col items-center justify-center px-6 text-center w-full">
           <div className="mb-12 w-full flex flex-col items-center">
-            <h3 className="text-xl text-gray-400 tracking-widest uppercase mb-2">Current Player</h3>
+            <h3 className="text-xl text-gray-400 tracking-widest uppercase mb-2">Jugador actual</h3>
             <FitText max={72} min={28} className="mb-6 px-4 pb-2" textClassName="font-bold text-white tracking-tight drop-shadow-md">{players[activePlayerIndex].name}</FitText>
             <div className={`text-[6rem] leading-none font-mono font-bold transition-colors ${timeLeft <= 5 ? 'text-red-500 animate-pulse' : 'text-white drop-shadow-md'}`}>
               00:{timeLeft.toString().padStart(2, '0')}
@@ -500,7 +500,7 @@ export default function CarouselGame({ playlistId, accessToken, onExit, initialS
                 className="relative w-full py-6 rounded-2xl gem-bg overflow-hidden active:scale-95 transition-transform shadow-lg"
               >
                 <div className="absolute left-0 top-0 bottom-0 bg-white/30 transition-all ease-linear" style={{ width: isHoldingNext ? '100%' : '0%', transitionDuration: isHoldingNext ? '300ms' : '150ms' }} />
-                <span className="relative z-10 font-bold text-2xl text-white tracking-widest uppercase drop-shadow-md">Next Player</span>
+                <span className="relative z-10 font-bold text-2xl text-white tracking-widest uppercase drop-shadow-md">Siguiente jugador</span>
               </button>
             )}
             <button
@@ -508,7 +508,7 @@ export default function CarouselGame({ playlistId, accessToken, onExit, initialS
               className={`relative w-full py-6 rounded-2xl overflow-hidden active:scale-95 transition-transform ${isLastPlayer ? 'gem-bg shadow-lg' : 'bg-[#1a1a1a] border border-[#B81137]/40'}`}
             >
               <div className="absolute left-0 top-0 bottom-0 bg-white/10 transition-all ease-linear" style={{ width: isHoldingEnd ? '100%' : '0%', transitionDuration: isHoldingEnd ? '600ms' : '150ms' }} />
-              <span className={`relative z-10 font-bold text-2xl tracking-widest uppercase text-white ${isLastPlayer ? 'drop-shadow-md' : 'opacity-60'}`}>End & Reveal</span>
+              <span className={`relative z-10 font-bold text-2xl tracking-widest uppercase text-white ${isLastPlayer ? 'drop-shadow-md' : 'opacity-60'}`}>Terminar y revelar</span>
             </button>
           </div>
         </div>
@@ -520,13 +520,13 @@ export default function CarouselGame({ playlistId, accessToken, onExit, initialS
           <p className="gem-text text-xl text-center mb-1 font-medium">{tracks[currentIndex].artists.map(a => a.name).join(', ')}</p>
           <p className="text-gray-400 text-md text-center mb-6">{originalYear}</p>
 
-          <p className="text-xs text-gray-500 uppercase tracking-widest mb-4">Click an icon, then click a player</p>
+          <p className="text-xs text-gray-500 uppercase tracking-widest mb-4">Toca un icono y luego toca un jugador</p>
 
           <div className="flex justify-center gap-6 mb-8">
             {[
-              { type: 'year', icon: Calendar, color: 'text-blue-400', label: 'Year', pts: settings.ptsYear },
-              { type: 'title', icon: Music, color: 'text-green-400', label: 'Title', pts: settings.ptsTitle },
-              { type: 'artist', icon: Mic2, color: 'text-purple-400', label: 'Artist', pts: settings.ptsArtist }
+              { type: 'year', icon: Calendar, color: 'text-blue-400', label: 'Año', pts: settings.ptsYear },
+              { type: 'title', icon: Music, color: 'text-green-400', label: 'Título', pts: settings.ptsTitle },
+              { type: 'artist', icon: Mic2, color: 'text-purple-400', label: 'Artista', pts: settings.ptsArtist }
             ].map(item => {
               const Icon = item.icon;
               const isAssigned = iconAssignments[item.type as keyof typeof iconAssignments] !== null;
@@ -583,7 +583,7 @@ export default function CarouselGame({ playlistId, accessToken, onExit, initialS
               className="relative w-full max-w-xs py-5 rounded-full gem-bg overflow-hidden active:scale-95 transition-transform"
             >
               <div className="absolute left-0 top-0 bottom-0 bg-white/30 transition-all ease-linear" style={{ width: isHoldingConfirm ? '100%' : '0%', transitionDuration: isHoldingConfirm ? '300ms' : '150ms' }} />
-              <span className="relative z-10 font-bold text-xl text-white tracking-widest uppercase drop-shadow-md">Confirm Points</span>
+              <span className="relative z-10 font-bold text-xl text-white tracking-widest uppercase drop-shadow-md">Confirmar puntos</span>
             </button>
           </div>
         </div>
@@ -592,7 +592,7 @@ export default function CarouselGame({ playlistId, accessToken, onExit, initialS
       {carouselPhase === 'leaderboard' && (
         <div className="flex-1 flex flex-col items-center justify-start pt-20 px-4 w-full h-full overflow-hidden z-30 pb-6">
           <Trophy className="w-20 h-20 text-[#B81137] mb-4 flex-shrink-0 drop-shadow-[0_0_15px_rgba(184,17,55,0.5)]" />
-          <h2 className="text-4xl font-bold text-white tracking-widest uppercase mb-6 flex-shrink-0">Leaderboard</h2>
+          <h2 className="text-4xl font-bold text-white tracking-widest uppercase mb-6 flex-shrink-0">Clasificación</h2>
 
           <div className="w-full max-w-sm flex flex-col gap-3 mb-6 flex-1 overflow-y-auto min-h-0 pb-4">
             {[...players].sort((a, b) => b.score - a.score).map((p, i) => (
@@ -611,7 +611,7 @@ export default function CarouselGame({ playlistId, accessToken, onExit, initialS
             >
               <div className="absolute left-0 top-0 bottom-0 bg-[#B81137] transition-all ease-linear" style={{ width: isHoldingNextSong ? '100%' : '0%', transitionDuration: isHoldingNextSong ? '600ms' : '150ms' }} />
               <span className="relative z-10 font-bold text-xl text-white flex items-center justify-center gap-3 tracking-widest uppercase">
-                <SkipForward className="fill-current" /> Next Song
+                <SkipForward className="fill-current" /> Siguiente canción
               </span>
             </button>
           </div>

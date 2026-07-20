@@ -19,7 +19,7 @@ export default function Home() {
   if (status === "loading") {
     return (
       <main className="flex h-[100dvh] overflow-hidden touch-none flex-col items-center justify-center bg-[#0a0a0a] text-foreground">
-        <p className="text-xl text-[#BF953F] animate-pulse">Loading...</p>
+        <p className="text-xl text-[#BF953F] animate-pulse">Cargando...</p>
       </main>
     );
   }

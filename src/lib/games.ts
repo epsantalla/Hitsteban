@@ -8,11 +8,11 @@ export const AVAILABLE_GAMES: GameDefinition[] = [
   {
     id: "songster",
     name: "Songster",
-    description: "Guess the song from a Spotify playlist. Classic solo mode or Carousel multiplayer.",
+    description: "Adivina la canción de una playlist de Spotify. Modo clásico para Hitster Bingo o standalone",
   },
   {
     id: "tribial",
     name: "Tribial",
-    description: "Trivia cavernícola: mantén pulsado para revelar la respuesta.",
+    description: "Juego de preguntas estilo Trivial",
   },
 ];

@@ -7,12 +7,12 @@ export interface GameMode {
 export const AVAILABLE_MODES: GameMode[] = [
   {
     id: "classic",
-    name: "Classic",
-    description: "The original Songster experience. Guess the track from the start.",
+    name: "Clásico",
+    description: "La experiencia original, diseñada para jugar con Hitster Bingo",
   },
   {
     id: "carousel",
-    name: "Carousel",
-    description: "Turn-based multiplayer mode with scoring. Players take turns guessing the song.",
+    name: "Carrusel",
+    description: "Modo multijugador por turnos con puntuación. Los jugadores se turnan para adivinar la canción.",
   }
 ];

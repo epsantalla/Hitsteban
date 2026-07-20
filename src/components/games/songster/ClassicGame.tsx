@@ -117,7 +117,7 @@ export default function ClassicGame({ playlistId, accessToken, mode, onExit, ini
     return (
       <div className="flex flex-col items-center justify-center min-h-screen p-6 text-center bg-[#0a0a0a] text-foreground">
         <p className="text-red-500 mb-4">{errorMsg}</p>
-        <button onClick={handleExit} className="px-6 py-2 bg-gray-800 rounded-full text-white">Go Back</button>
+        <button onClick={handleExit} className="px-6 py-2 bg-gray-800 rounded-full text-white">Volver</button>
       </div>
     );
   }
@@ -126,7 +126,7 @@ export default function ClassicGame({ playlistId, accessToken, mode, onExit, ini
     return (
       <div className="flex flex-col items-center justify-center min-h-screen text-gray-400 bg-[#0a0a0a] text-foreground">
         <Loader2 className="w-12 h-12 animate-spin mb-4 text-[#D4AF37]" />
-        <p className="text-[#D4AF37]/80">{loading ? 'Loading Tracks...' : 'Connecting to Spotify...'}</p>
+        <p className="text-[#D4AF37]/80">{loading ? 'Cargando canciones...' : 'Conectando con Spotify...'}</p>
       </div>
     );
   }
@@ -136,14 +136,14 @@ export default function ClassicGame({ playlistId, accessToken, mode, onExit, ini
     return (
       <div className="flex flex-col items-center justify-center min-h-screen p-6 text-center bg-[#0a0a0a] text-foreground">
         <h2 className="text-3xl font-bold mb-8 text-white">
-          {resuming ? `Resume · track ${currentIndex + 1}/${tracks.length}` : `${tracks.length} Tracks Loaded`}
+          {resuming ? `Reanudar · canción ${currentIndex + 1}/${tracks.length}` : `${tracks.length} canciones cargadas`}
         </h2>
         <button
           onClick={startGame}
           className="flex items-center gap-3 px-10 py-5 bg-[#D4AF37] hover:bg-[#b8952b] text-black rounded-full font-bold text-xl shadow-xl shadow-[#D4AF37]/20 transition-all active:scale-95"
         >
           <Play className="fill-current" />
-          {resuming ? 'Continue' : 'Start Game'}
+          {resuming ? 'Continuar' : 'Empezar partida'}
         </button>
       </div>
     );
@@ -185,7 +185,7 @@ export default function ClassicGame({ playlistId, accessToken, mode, onExit, ini
             onClick={(e) => { e.stopPropagation(); handleExit(); }}
             className="text-xs px-3 py-1 border border-gray-700 rounded text-gray-400 hover:bg-gray-800 transition"
           >
-            End Game
+            Terminar partida
           </button>
         </div>
 
@@ -212,7 +212,7 @@ export default function ClassicGame({ playlistId, accessToken, mode, onExit, ini
                 </div>
               </div>
               <h2 className="text-2xl font-light text-[#D4AF37] tracking-widest uppercase opacity-80">
-                Hold to Reveal
+                Mantén pulsado para revelar
               </h2>
             </div>
           ) : (
@@ -244,7 +244,7 @@ export default function ClassicGame({ playlistId, accessToken, mode, onExit, ini
               </div>
 
               <p className={`text-sm uppercase tracking-widest transition-colors duration-300 ${isHolding ? 'text-[#D4AF37]' : 'text-gray-600'}`}>
-                Hold for next track
+                Mantén para la siguiente canción
               </p>
             </div>
           )}

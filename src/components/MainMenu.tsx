@@ -42,7 +42,7 @@ export default function MainMenu({ onSelectGame }: MainMenuProps) {
             onClick={() => signOut()}
             className="text-sm px-4 py-2 border border-gray-600 rounded-md text-gray-400 hover:text-white hover:bg-gray-800 transition"
           >
-            Sign Out
+            Cerrar sesión
           </button>
         </div>
       )}
@@ -61,7 +61,7 @@ export default function MainMenu({ onSelectGame }: MainMenuProps) {
               onClick={() => onSelectGame(saved.gameId)}
               className="w-full text-left px-6 py-5 bg-[#111] border border-[#BF953F]/50 rounded-xl hover:border-[#BF953F] hover:bg-[#161616] transition-all duration-300 group active:scale-95"
             >
-              <p className="text-xs uppercase tracking-widest text-[#BF953F] mb-1">Continue where you left off</p>
+              <p className="text-xs uppercase tracking-widest text-[#BF953F] mb-1">Continúa donde lo dejaste</p>
               <h2 className="text-lg font-bold text-white">{savedGameName}</h2>
               <p className="text-sm text-gray-500 mt-1">{saved.label}</p>
             </button>

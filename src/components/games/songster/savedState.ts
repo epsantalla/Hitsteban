@@ -52,13 +52,13 @@ export type SongsterProgress = Pick<SongsterSavedState, "currentIndex" | "tracks
   carousel?: CarouselSavedState;
 };
 
-/** Short human summary for the resume card, e.g. "Carousel · song 5/20 · 3 players". */
+/** Short human summary for the resume card, e.g. "Carrusel · canción 5/20 · 3 jugadores". */
 export function buildSongsterLabel(state: SongsterSavedState): string {
   const total = state.tracks.length;
   const position = Math.min(state.currentIndex + 1, total);
   if (state.mode === "carousel") {
     const players = state.carousel?.players.length ?? 0;
-    return `Carousel · song ${position}/${total} · ${players} player${players === 1 ? "" : "s"}`;
+    return `Carrusel · canción ${position}/${total} · ${players} jugador${players === 1 ? "" : "es"}`;
   }
-  return `Classic · track ${position}/${total}`;
+  return `Clásico · canción ${position}/${total}`;
 }

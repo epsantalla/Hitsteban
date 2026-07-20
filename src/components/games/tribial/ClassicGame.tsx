@@ -233,7 +233,7 @@ export default function ClassicGame({ questions, onExit }: {
       holdTimerRef.current = null;
       setIsHoldingConfirm(false);
       confirmAnswer();
-    }, 600);
+    }, 300);
   };
   const cancelHold = () => {
     if (holdTimerRef.current) {
@@ -497,7 +497,7 @@ export default function ClassicGame({ questions, onExit }: {
         </div>
 
         {/* Bottom action */}
-        <div className="flex-shrink-0 mt-4">
+        <div className="flex-shrink-0 mt-4 mb-6">
           {!revealed ? (
             <button
               onPointerDown={startHold}
@@ -508,7 +508,7 @@ export default function ClassicGame({ questions, onExit }: {
                 className="absolute left-0 top-0 bottom-0 bg-white/30 transition-all ease-linear"
                 style={{
                   width: isHoldingConfirm ? "100%" : "0%",
-                  transitionDuration: isHoldingConfirm ? "600ms" : "150ms",
+                  transitionDuration: isHoldingConfirm ? "300ms" : "150ms",
                 }}
               />
               <span className="relative z-10 font-bold text-lg uppercase tracking-widest text-black">
