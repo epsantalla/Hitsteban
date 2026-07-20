@@ -10,9 +10,9 @@ import PandoraBoxIcon from "@/components/PandoraBoxIcon";
 
 const cinzel = Cinzel({ subsets: ["latin"], weight: ["500", "700"] });
 
-const multicolorTitleStyle = {
-  backgroundImage:
-    "linear-gradient(90deg, #BF953F, #1B998B, #6A4C93, #C81D6B, #2E6F95, #BF953F)",
+// Polished-gold wordmark, matching the logo.
+const goldTitleStyle = {
+  backgroundImage: "linear-gradient(160deg, #F5E7A8 0%, #D4AF37 38%, #BF953F 62%, #9C7A2E 100%)",
 };
 
 // Each game card gets its own tessera color, like tiles in a mosaic.
@@ -55,8 +55,8 @@ export default function MainMenu({ onSelectGame }: MainMenuProps) {
         <PandoraBoxIcon className="w-16 h-16 mb-4 drop-shadow-[0_0_16px_rgba(191,149,63,0.35)]" />
 
         <h1
-          style={multicolorTitleStyle}
-          className={`${cinzel.className} text-4xl sm:text-5xl font-bold mb-10 text-center bg-clip-text text-transparent drop-shadow-sm tracking-wide`}
+          style={goldTitleStyle}
+          className={`${cinzel.className} text-5xl sm:text-6xl font-bold mb-10 text-center bg-clip-text text-transparent tracking-wide drop-shadow-[0_2px_10px_rgba(191,149,63,0.25)]`}
         >
           Estebox
         </h1>
@@ -65,11 +65,11 @@ export default function MainMenu({ onSelectGame }: MainMenuProps) {
           {saved && savedGameName && (
             <button
               onClick={() => onSelectGame(saved.gameId)}
-              className="w-full text-left px-6 py-5 bg-white/[0.03] backdrop-blur-sm border border-[#BF953F]/40 rounded-2xl hover:border-[#BF953F] hover:bg-white/[0.06] transition-all duration-300 group active:scale-95 shadow-[0_0_0_rgba(0,0,0,0)] hover:shadow-[0_0_24px_rgba(191,149,63,0.15)]"
+              className="w-full text-left px-6 py-5 bg-[#0b0906]/85 backdrop-blur-md border border-[#BF953F]/50 rounded-2xl hover:border-[#BF953F] hover:bg-[#0b0906]/95 transition-all duration-300 group active:scale-95 hover:shadow-[0_0_24px_rgba(191,149,63,0.2)]"
             >
-              <p className="text-xs uppercase tracking-widest text-[#BF953F] mb-1">Continúa donde lo dejaste</p>
+              <p className="text-xs uppercase tracking-widest text-[#D4AF37] mb-1">Continúa donde lo dejaste</p>
               <h2 className="text-lg font-bold text-white">{savedGameName}</h2>
-              <p className="text-sm text-gray-500 mt-1">{saved.label}</p>
+              <p className="text-sm text-gray-300 mt-1">{saved.label}</p>
             </button>
           )}
           {AVAILABLE_GAMES.map((game, i) => {
@@ -79,10 +79,10 @@ export default function MainMenu({ onSelectGame }: MainMenuProps) {
                 key={game.id}
                 onClick={() => onSelectGame(game.id)}
                 style={{ "--accent": accent } as CSSProperties}
-                className="relative w-full text-left px-6 py-5 bg-white/[0.03] backdrop-blur-sm border border-white/10 rounded-2xl hover:border-[var(--accent)] hover:bg-white/[0.06] transition-all duration-300 group active:scale-95 overflow-hidden"
+                className="relative w-full text-left pl-7 pr-6 py-5 bg-[#0b0906]/85 backdrop-blur-md border border-white/10 rounded-2xl hover:border-[var(--accent)] hover:bg-[#0b0906]/95 transition-all duration-300 group active:scale-95 overflow-hidden"
               >
                 <span
-                  className="absolute top-0 left-0 h-full w-1 opacity-70 group-hover:opacity-100 transition-opacity"
+                  className="absolute top-0 left-0 h-full w-1.5 opacity-80 group-hover:opacity-100 transition-opacity"
                   style={{ backgroundColor: accent }}
                 />
                 <h2
@@ -90,7 +90,7 @@ export default function MainMenu({ onSelectGame }: MainMenuProps) {
                 >
                   {game.name}
                 </h2>
-                <p className="text-sm text-gray-500 mt-1">{game.description}</p>
+                <p className="text-sm text-gray-300 mt-1">{game.description}</p>
               </button>
             );
           })}

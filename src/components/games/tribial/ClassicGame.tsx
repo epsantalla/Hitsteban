@@ -508,7 +508,7 @@ export default function ClassicGame({ questions, onExit }: {
                 className="absolute left-0 top-0 bottom-0 bg-white/30 transition-all ease-linear"
                 style={{
                   width: isHoldingConfirm ? "100%" : "0%",
-                  transitionDuration: isHoldingConfirm ? "300ms" : "150ms",
+                  transitionDuration: isHoldingConfirm ? "100ms" : "50ms",
                 }}
               />
               <span className="relative z-10 font-bold text-lg uppercase tracking-widest text-black">
