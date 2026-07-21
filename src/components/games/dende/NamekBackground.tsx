@@ -2,10 +2,16 @@
 
 /**
  * Decorative, non-interactive backdrop for Dende: a painted-style rendering of
- * planet Namek (Dragon Ball) — a large glowing green/yellow sphere with
- * diagonal swirling bands and a bright highlight, floating in a starfield.
- * Pure inline SVG + CSS (no image files), mirroring the convention of
- * `PandoraBackground` / `TribalBackground`.
+ * planet Namek (Dragon Ball) — a large 3D-shaded green/yellow sphere with
+ * diagonal swirling bands, floating in a starfield. Pure CSS + inline SVG (no
+ * image files), mirroring the convention of `PandoraBackground` /
+ * `TribalBackground`.
+ *
+ * The sphere's 3D look comes from the classic CSS "ball" trick: a banded
+ * texture + specular-highlight/diffuse-shading gradients, topped with a large
+ * *inset* box-shadow that darkens the unlit hemisphere and curves naturally
+ * with the circle's edge (rather than a flat disc with a gradient painted
+ * on top).
  *
  * A uniform dark scrim sits on top of everything so card text stays legible
  * no matter how bright/busy the sphere rendering underneath gets.
@@ -32,7 +38,7 @@ const STARS = Array.from({ length: STAR_COUNT }, (_, i) => {
 
 export default function NamekBackground() {
   return (
-    <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
+    <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden bg-[#020509]">
       <style>{`
         @keyframes dende-twinkle {
           0%, 100% { opacity: 0.35; }
@@ -40,52 +46,15 @@ export default function NamekBackground() {
         }
       `}</style>
 
+      {/* deep space + stars */}
       <svg className="absolute inset-0 h-full w-full" preserveAspectRatio="xMidYMid slice" viewBox="0 0 800 800">
         <defs>
           <radialGradient id="dende-space" cx="50%" cy="50%" r="75%">
             <stop offset="0%" stopColor="#081326" />
             <stop offset="100%" stopColor="#020509" />
           </radialGradient>
-
-          <pattern id="dende-bands" width="70" height="70" patternUnits="userSpaceOnUse" patternTransform="rotate(115)">
-            <rect width="70" height="70" fill="#1B9E63" />
-            <rect x="0" width="26" height="70" fill="#149A5C" />
-            <rect x="26" width="10" height="70" fill="#D8E86A" />
-            <rect x="36" width="18" height="70" fill="#2BB673" />
-            <rect x="54" width="6" height="70" fill="#8FE3A0" />
-            <rect x="60" width="10" height="70" fill="#178552" />
-          </pattern>
-
-          <filter id="dende-soften" x="-20%" y="-20%" width="140%" height="140%">
-            <feGaussianBlur stdDeviation="4.5" />
-          </filter>
-
-          <radialGradient id="dende-limb" cx="32%" cy="72%" r="78%">
-            <stop offset="0%" stopColor="#010301" stopOpacity="0" />
-            <stop offset="65%" stopColor="#010301" stopOpacity="0.12" />
-            <stop offset="100%" stopColor="#010301" stopOpacity="0.8" />
-          </radialGradient>
-
-          <radialGradient id="dende-hotspot" cx="66%" cy="30%" r="55%">
-            <stop offset="0%" stopColor="#F3FFF2" stopOpacity="0.8" />
-            <stop offset="45%" stopColor="#E8FFC8" stopOpacity="0.25" />
-            <stop offset="100%" stopColor="#E8FFC8" stopOpacity="0" />
-          </radialGradient>
-
-          <radialGradient id="dende-halo" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="#4FB8E3" stopOpacity="0.3" />
-            <stop offset="100%" stopColor="#4FB8E3" stopOpacity="0" />
-          </radialGradient>
-
-          <clipPath id="dende-sphere-clip">
-            <circle cx="470" cy="360" r="430" />
-          </clipPath>
         </defs>
-
-        {/* deep space base */}
         <rect width="800" height="800" fill="url(#dende-space)" />
-
-        {/* stars */}
         {STARS.map((s, i) => (
           <circle
             key={i}
@@ -97,17 +66,31 @@ export default function NamekBackground() {
             style={{ animation: `dende-twinkle ${s.dur}s ease-in-out infinite`, animationDelay: `${s.delay}s` }}
           />
         ))}
-
-        {/* soft outer halo */}
-        <circle cx="470" cy="360" r="470" fill="url(#dende-halo)" />
-
-        {/* the planet body: banded pattern, softened, clipped to a circle */}
-        <g clipPath="url(#dende-sphere-clip)">
-          <rect x="0" y="0" width="800" height="800" fill="url(#dende-bands)" filter="url(#dende-soften)" />
-          <circle cx="470" cy="360" r="430" fill="url(#dende-hotspot)" />
-          <circle cx="470" cy="360" r="430" fill="url(#dende-limb)" />
-        </g>
       </svg>
+
+      {/* the planet: banded texture + specular/diffuse gradients + a big inset
+          shadow that curves with the circle's edge — the classic CSS "sphere
+          shader" trick, giving real 3D shading instead of a flat painted disc. */}
+      <div
+        className="absolute rounded-full"
+        style={{
+          top: "-10vmin",
+          right: "-12vmin",
+          width: "100vmin",
+          height: "100vmin",
+          background: `
+            radial-gradient(circle at 32% 26%, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.4) 5%, rgba(255,255,255,0) 15%),
+            repeating-linear-gradient(112deg, #178552 0 22px, #1B9E63 22px 34px, #D8E86A 34px 42px, #2BB673 42px 60px, #8FE3A0 60px 66px, #149A5C 66px 86px),
+            radial-gradient(circle at 40% 35%, #BFF0A8 0%, #2BB673 42%, #0F5A3C 78%, #063823 100%)
+          `,
+          backgroundBlendMode: "screen, soft-light, normal",
+          boxShadow: `
+            inset -24vmin -24vmin 32vmin rgba(0,3,2,0.9),
+            inset 12vmin 12vmin 20vmin rgba(255,255,255,0.15),
+            0 0 14vmin rgba(79,184,227,0.4)
+          `,
+        }}
+      />
 
       {/* uniform dark scrim so text always reads clearly regardless of what's behind it */}
       <div className="absolute inset-0 bg-black/55" />

@@ -1,71 +1,36 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
   <defs>
-    <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#BF953F" />
-      <stop offset="50%" stop-color="#FCF6BA" />
-      <stop offset="100%" stop-color="#B38728" />
+    <linearGradient id="top" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#E7C08E" />
+      <stop offset="100%" stop-color="#C88C4E" />
+    </linearGradient>
+    <linearGradient id="left" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#A9713F" />
+      <stop offset="100%" stop-color="#8A5A32" />
+    </linearGradient>
+    <linearGradient id="right" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6E4526" />
+      <stop offset="100%" stop-color="#54341C" />
     </linearGradient>
     <radialGradient id="glow" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="#FFFBE6" stop-opacity="1" />
-      <stop offset="35%" stop-color="#FCF6BA" stop-opacity="0.85" />
-      <stop offset="70%" stop-color="#BF953F" stop-opacity="0.35" />
-      <stop offset="100%" stop-color="#BF953F" stop-opacity="0" />
+      <stop offset="0%" stop-color="#E7C08E" stop-opacity="0.35" />
+      <stop offset="100%" stop-color="#E7C08E" stop-opacity="0" />
     </radialGradient>
   </defs>
 
   <!-- Badge backdrop -->
   <circle cx="50" cy="50" r="48" fill="#100c07" stroke="#2c2418" stroke-width="2"/>
 
-  <!-- Glow core -->
-  <ellipse cx="50" cy="44" rx="34" ry="30" fill="url(#glow)"/>
+  <!-- Ambient glow behind the crate -->
+  <ellipse cx="50" cy="52" rx="38" ry="34" fill="url(#glow)"/>
 
-  <!-- Light rays bursting out from behind the lid -->
-  <g fill="url(#gold)" opacity="0.5">
-    <path d="M50 50 L48.7 18 L51.3 18 Z" transform="rotate(-74 50 50)"/>
-    <path d="M50 50 L48.9 27 L51.1 27 Z" transform="rotate(-62 50 50)"/>
-    <path d="M50 50 L48.7 18 L51.3 18 Z" transform="rotate(-50 50 50)"/>
-    <path d="M50 50 L48.9 27 L51.1 27 Z" transform="rotate(-38 50 50)"/>
-    <path d="M50 50 L48.7 18 L51.3 18 Z" transform="rotate(-26 50 50)"/>
-    <path d="M50 50 L48.9 27 L51.1 27 Z" transform="rotate(-14 50 50)"/>
-    <path d="M50 50 L48.7 18 L51.3 18 Z" transform="rotate(0 50 50)"/>
-    <path d="M50 50 L48.9 27 L51.1 27 Z" transform="rotate(14 50 50)"/>
-    <path d="M50 50 L48.7 18 L51.3 18 Z" transform="rotate(26 50 50)"/>
-    <path d="M50 50 L48.9 27 L51.1 27 Z" transform="rotate(38 50 50)"/>
-    <path d="M50 50 L48.7 18 L51.3 18 Z" transform="rotate(50 50 50)"/>
-    <path d="M50 50 L48.9 27 L51.1 27 Z" transform="rotate(62 50 50)"/>
-    <path d="M50 50 L48.7 18 L51.3 18 Z" transform="rotate(74 50 50)"/>
+  <!-- Isometric packing crate -->
+  <g stroke="#3A2313" stroke-width="2" stroke-linejoin="round">
+    <polygon points="50,10 86,30 50,50 14,30" fill="url(#top)"/>
+    <polygon points="14,30 14,70 50,90 50,50" fill="url(#left)"/>
+    <polygon points="86,30 86,70 50,90 50,50" fill="url(#right)"/>
   </g>
 
-  <!-- Open lid, raised and tilted back -->
-  <g transform="rotate(-10 50 50)">
-    <path d="M33 49 C33 30, 41 20, 50 20 C59 20, 67 30, 67 49 Z" fill="#1a140c" stroke="url(#gold)" stroke-width="1.6" stroke-linejoin="round"/>
-    <path d="M38 49 C38 33, 44 25, 50 25 C56 25, 62 33, 62 49" fill="none" stroke="url(#gold)" stroke-width="0.8" opacity="0.55"/>
-    <circle cx="50" cy="18" r="2.3" fill="url(#gold)"/>
-  </g>
-
-  <!-- Coloured motes drifting up out of the box -->
-  <circle cx="37" cy="40" r="1.9" fill="#1B998B"/>
-  <circle cx="64" cy="37" r="1.9" fill="#C81D6B"/>
-  <circle cx="50" cy="32" r="1.6" fill="#6A4C93"/>
-  <circle cx="43" cy="47" r="1.5" fill="#2E6F95"/>
-  <circle cx="59" cy="46" r="1.5" fill="#D4AF37"/>
-
-  <!-- Bright open mouth of the box -->
-  <ellipse cx="50" cy="55" rx="27" ry="6" fill="url(#glow)"/>
-  <ellipse cx="50" cy="55" rx="27" ry="6" fill="none" stroke="url(#gold)" stroke-width="1.6"/>
-
-  <!-- Chest body / front wall -->
-  <path d="M24 55 H76 V81 Q76 85 72 85 H28 Q24 85 24 81 Z" fill="#1a140c" stroke="url(#gold)" stroke-width="1.6" stroke-linejoin="round"/>
-
-  <!-- Greek key (meander) band -->
-  <g fill="none" stroke="url(#gold)" stroke-width="1.1">
-    <path d="M26.5,63.5 H35.5 V72.5 H29.5 V66.5 H33 V70"/>
-    <path d="M39,63.5 H48 V72.5 H42 V66.5 H45.5 V70"/>
-    <path d="M51.5,63.5 H60.5 V72.5 H54.5 V66.5 H58 V70"/>
-    <path d="M64,63.5 H73 V72.5 H67 V66.5 H70.5 V70"/>
-  </g>
-
-  <!-- Clasp + base moulding -->
-  <rect x="46" y="56" width="8" height="9" rx="1.5" fill="url(#gold)"/>
-  <rect x="22" y="85" width="56" height="4" rx="1.5" fill="url(#gold)"/>
+  <!-- Tape sealing the top flaps, running down the front edge -->
+  <path d="M50 10 L50 90" stroke="#EFE0C0" stroke-width="5" stroke-linecap="round" opacity="0.85"/>
 </svg>

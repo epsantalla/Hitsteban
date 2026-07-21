@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, BookOpen, Loader2, X } from "lucide-react";
+import { BookOpen, Loader2, X } from "lucide-react";
 import { usePlaylistTracks } from "@/hooks/usePlaylistTracks";
 import { useSpotifyPlayer } from "@/hooks/useSpotifyPlayer";
 import FitBox from "@/components/FitBox";
@@ -110,16 +110,10 @@ export default function DendeGame({
   const [pity, setPity] = useState<Record<string, number>>(initialState?.pity ?? {});
   const [usedTrackIds, setUsedTrackIds] = useState<string[]>(initialState?.usedTrackIds ?? []);
 
-  // Views already seen, for the "go back" button. Local-only — not persisted
-  // across a resume, since it's a convenience peek, not part of game state.
-  const [history, setHistory] = useState<DendeView[]>([]);
-
   const [subPhase, setSubPhase] = useState<"none" | "tribial" | "songster">("none");
   const [showNormas, setShowNormas] = useState(false);
   const [isHolding, setIsHolding] = useState(false);
-  const [isHoldingBack, setIsHoldingBack] = useState(false);
   const holdTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const backHoldTimerRef = useRef<NodeJS.Timeout | null>(null);
   const lastCardRef = useRef<Card | null>(null);
 
   const errorMsg = (songsterEnabled ? loadError : null) || playerError;
@@ -138,11 +132,6 @@ export default function DendeGame({
   };
 
   function advanceToNextView() {
-    if (view) {
-      const outgoing = view;
-      setHistory((h) => [...h, outgoing]);
-    }
-
     if (pendingExpiries.length > 0) {
       const [next, ...rest] = pendingExpiries;
       setPendingExpiries(rest);
@@ -180,13 +169,6 @@ export default function DendeGame({
     setActiveNormas(stillActive);
     setPendingExpiries(justExpired);
     setView({ kind: "card", text: outcome.text, weight: card.weight, flag: card.flag });
-  }
-
-  function goBack() {
-    if (history.length === 0) return;
-    const prev = history[history.length - 1];
-    setHistory(history.slice(0, -1));
-    setView(prev);
   }
 
   // Draw the very first view once ready (fresh game — resumed games already have `view`).
@@ -237,32 +219,9 @@ export default function DendeGame({
     setIsHolding(false);
   };
 
-  const handleBackPointerDown = (e: React.PointerEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (backHoldTimerRef.current || history.length === 0) return;
-
-    setIsHoldingBack(true);
-    backHoldTimerRef.current = setTimeout(() => {
-      backHoldTimerRef.current = null;
-      setIsHoldingBack(false);
-      goBack();
-    }, 600);
-  };
-
-  const handleBackPointerUpOrLeave = (e: React.PointerEvent) => {
-    e.stopPropagation();
-    if (backHoldTimerRef.current) {
-      clearTimeout(backHoldTimerRef.current);
-      backHoldTimerRef.current = null;
-    }
-    setIsHoldingBack(false);
-  };
-
   useEffect(() => {
     return () => {
       if (holdTimerRef.current) clearTimeout(holdTimerRef.current);
-      if (backHoldTimerRef.current) clearTimeout(backHoldTimerRef.current);
     };
   }, []);
 
@@ -453,25 +412,6 @@ export default function DendeGame({
         )}
         {!view && <Loader2 className="animate-spin text-[#2BB673] w-10 h-10" />}
       </div>
-
-      {history.length > 0 && (
-        <div className="absolute bottom-6 left-4 z-30">
-          <button
-            onPointerDown={handleBackPointerDown}
-            onPointerUp={handleBackPointerUpOrLeave}
-            onPointerLeave={handleBackPointerUpOrLeave}
-            onPointerCancel={handleBackPointerUpOrLeave}
-            className="relative flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[#1B4433] bg-[#04120D]/60 text-[#8FBFA4] overflow-hidden"
-          >
-            <div
-              className="absolute left-0 top-0 bottom-0 bg-[#2BB673]/40 transition-all ease-linear"
-              style={{ width: isHoldingBack ? "100%" : "0%", transitionDuration: isHoldingBack ? "600ms" : "150ms" }}
-            />
-            <ArrowLeft size={16} className="relative z-10" />
-            <span className="relative z-10 text-xs uppercase tracking-widest">Atrás</span>
-          </button>
-        </div>
-      )}
 
       <div className="pb-10 flex justify-center pointer-events-none">
         <p className={`text-sm uppercase tracking-widest transition-colors duration-300 ${isHolding ? "text-[#2BB673]" : "text-[#8FBFA4]"}`}>

@@ -4,7 +4,7 @@ import { useSession } from "next-auth/react";
 import { useState } from "react";
 import { Cinzel } from "next/font/google";
 import MainMenu from "@/components/MainMenu";
-import PandoraBoxIcon from "@/components/PandoraBoxIcon";
+import BoxIcon from "@/components/BoxIcon";
 import Songster from "@/components/games/songster/Songster";
 import Tribial from "@/components/games/tribial/Tribial";
 import Dende from "@/components/games/dende/Dende";
@@ -24,8 +24,8 @@ export default function Home() {
   if (status === "loading") {
     return (
       <main className="flex h-[100dvh] overflow-hidden touch-none flex-col items-center justify-center gap-4 bg-[#0a0a0a] text-foreground">
-        <PandoraBoxIcon className="w-14 h-14 animate-pulse drop-shadow-[0_0_16px_rgba(191,149,63,0.35)]" />
-        <p className={`${cinzel.className} text-lg tracking-wide text-[#BF953F] animate-pulse`}>
+        <BoxIcon className="w-14 h-14 animate-pulse drop-shadow-[0_0_16px_rgba(169,113,63,0.35)]" />
+        <p className={`${cinzel.className} text-lg tracking-wide text-[#D9A066] animate-pulse`}>
           Cargando...
         </p>
       </main>

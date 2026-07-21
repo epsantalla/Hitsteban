@@ -6,13 +6,14 @@ import { Cinzel } from "next/font/google";
 import { AVAILABLE_GAMES } from "@/lib/games";
 import { loadSavedGame, SavedGame } from "@/lib/savedGame";
 import PandoraBackground from "@/components/PandoraBackground";
-import PandoraBoxIcon from "@/components/PandoraBoxIcon";
+import BoxIcon from "@/components/BoxIcon";
 
 const cinzel = Cinzel({ subsets: ["latin"], weight: ["500", "700"] });
 
-// Polished-gold wordmark, matching the logo.
-const goldTitleStyle = {
-  backgroundImage: "linear-gradient(160deg, #F5E7A8 0%, #D4AF37 38%, #BF953F 62%, #9C7A2E 100%)",
+// Warm amber wordmark — brighter and more saturated than the surrounding
+// brown chrome so it pops against it.
+const titleStyle = {
+  backgroundImage: "linear-gradient(160deg, #F6D9A0 0%, #E2984E 45%, #B5651D 100%)",
 };
 
 // Each game card gets its own tessera color, like tiles in a mosaic.
@@ -36,7 +37,7 @@ export default function MainMenu({ onSelectGame }: MainMenuProps) {
     : undefined;
 
   return (
-    <main className="relative flex h-[100dvh] overflow-hidden flex-col items-center justify-center p-6 bg-[#0a0a0a] text-foreground w-full">
+    <main className="relative flex h-[100dvh] overflow-hidden flex-col items-center justify-center p-6 bg-[#0a0704] text-foreground w-full">
       <PandoraBackground />
 
       {/* Sign out is account-level (Spotify); only meaningful once a game has authenticated. */}
@@ -52,11 +53,11 @@ export default function MainMenu({ onSelectGame }: MainMenuProps) {
       )}
 
       <div className="relative z-10 w-full max-w-md mx-auto flex flex-col items-center">
-        <PandoraBoxIcon className="w-16 h-16 mb-4 drop-shadow-[0_0_16px_rgba(191,149,63,0.35)]" />
+        <BoxIcon className="w-16 h-16 mb-4 drop-shadow-[0_0_16px_rgba(169,113,63,0.35)]" />
 
         <h1
-          style={goldTitleStyle}
-          className={`${cinzel.className} text-5xl sm:text-6xl font-bold mb-10 text-center bg-clip-text text-transparent tracking-wide drop-shadow-[0_2px_10px_rgba(191,149,63,0.25)]`}
+          style={titleStyle}
+          className={`${cinzel.className} text-5xl sm:text-6xl font-bold mb-10 text-center bg-clip-text text-transparent tracking-wide drop-shadow-[0_2px_10px_rgba(169,113,63,0.25)]`}
         >
           Estebox
         </h1>
@@ -65,9 +66,9 @@ export default function MainMenu({ onSelectGame }: MainMenuProps) {
           {saved && savedGameName && (
             <button
               onClick={() => onSelectGame(saved.gameId)}
-              className="w-full text-left px-6 py-5 bg-[#0b0906]/85 backdrop-blur-md border border-[#BF953F]/50 rounded-2xl hover:border-[#BF953F] hover:bg-[#0b0906]/95 transition-all duration-300 group active:scale-95 hover:shadow-[0_0_24px_rgba(191,149,63,0.2)]"
+              className="w-full text-left px-6 py-5 bg-[#0b0906]/85 backdrop-blur-md border border-[#A9713F]/50 rounded-2xl hover:border-[#A9713F] hover:bg-[#0b0906]/95 transition-all duration-300 group active:scale-95 hover:shadow-[0_0_24px_rgba(169,113,63,0.2)]"
             >
-              <p className="text-xs uppercase tracking-widest text-[#D4AF37] mb-1">Continúa donde lo dejaste</p>
+              <p className="text-xs uppercase tracking-widest text-[#D9A066] mb-1">Continúa donde lo dejaste</p>
               <h2 className="text-lg font-bold text-white">{savedGameName}</h2>
               <p className="text-sm text-gray-300 mt-1">{saved.label}</p>
             </button>

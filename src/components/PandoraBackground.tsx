@@ -1,7 +1,8 @@
 // Deterministic mosaic made of thousands of individual tesserae (small tiles)
 // with grout gaps between them — the real Roman/Byzantine mosaic look, not a
-// grid of lines. Tiles are mostly dark stone; jewel/gold tesserae concentrate
-// near a light source at bottom-center, as if spilling out of Pandora's box.
+// grid of lines. Tiles are mostly dark stone; warm kraft/tan tesserae
+// concentrate near a light source at bottom-center, like light catching the
+// logo's crate.
 // Built once at module load (deterministic hash → same output every render, no
 // hydration mismatch, no per-render cost).
 
@@ -17,10 +18,10 @@ const FY = 720;
 const FALLOFF = 640;
 
 const STONE = ["#161009", "#1b130b", "#0f0b07", "#20160d", "#130e08"];
-// Gold-dominant, with jewel tesserae sprinkled in — like coloured glass smalti.
+// Warm kraft/cardboard tones, like sunlit tesserae cut from brown glass.
 const SMALTI = [
-  "#BF953F", "#BF953F", "#D4AF37", "#C9A227", "#E6D2A0",
-  "#1B998B", "#2E6F95", "#6A4C93", "#C81D6B",
+  "#A9713F", "#A9713F", "#D9A066", "#C88C4E", "#E7C08E",
+  "#8A5A32", "#6E4526", "#BC8552", "#54341C",
 ];
 
 // Cheap deterministic hash → [0,1).
@@ -87,9 +88,9 @@ export default function PandoraBackground() {
     >
       <defs>
         <radialGradient id="pb-spill" cx="50%" cy="90%" r="65%">
-          <stop offset="0%" stopColor="#FCF6BA" stopOpacity="0.18" />
-          <stop offset="45%" stopColor="#BF953F" stopOpacity="0.08" />
-          <stop offset="100%" stopColor="#BF953F" stopOpacity="0" />
+          <stop offset="0%" stopColor="#E7C08E" stopOpacity="0.18" />
+          <stop offset="45%" stopColor="#A9713F" stopOpacity="0.08" />
+          <stop offset="100%" stopColor="#A9713F" stopOpacity="0" />
         </radialGradient>
         <radialGradient id="pb-vignette" cx="50%" cy="45%" r="75%">
           <stop offset="55%" stopColor="#000000" stopOpacity="0" />

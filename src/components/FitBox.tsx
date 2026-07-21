@@ -41,9 +41,18 @@ export default function FitBox({
     const text = textRef.current;
     if (!container || !text) return;
 
+    // A margin below the container's real size: text that measures as
+    // "just barely fitting" can still visually clip a pixel or two (font
+    // metrics/descenders, sub-pixel rounding in scrollHeight/Width), so the
+    // fit check targets a deliberately smaller box than the true one.
+    const SAFETY = 0.9;
+
     const fits = (size: number) => {
       text.style.fontSize = `${size}px`;
-      return text.scrollHeight <= container.clientHeight && text.scrollWidth <= container.clientWidth;
+      return (
+        text.scrollHeight <= container.clientHeight * SAFETY &&
+        text.scrollWidth <= container.clientWidth * SAFETY
+      );
     };
 
     // Largest size in [lo, hi] that still fits, or null if none does.
