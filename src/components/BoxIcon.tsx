@@ -42,8 +42,8 @@ export default function BoxIcon({ className }: BoxIconProps) {
         <polygon points={RIGHT} fill="url(#bi-right)" />
       </g>
 
-      {/* Tape sealing the top flaps, running down the front edge */}
-      <path d="M50 10 L50 90" stroke="#EFE0C0" strokeWidth="5" strokeLinecap="round" opacity="0.85" />
+      {/* Tape piece sealing the top flaps, kept within the top face */}
+      <path d="M50 10 L50 34" stroke="#D8C79A" strokeWidth="6" strokeLinecap="round" opacity="0.9" />
     </svg>
   );
 }

@@ -88,7 +88,10 @@ export default function FitBox({
 
   return (
     <div ref={containerRef} className={`w-full h-full overflow-hidden flex items-center justify-center ${className}`}>
-      <div ref={textRef} className={`text-center ${textClassName}`} style={{ fontSize }}>
+      {/* w-full + min-w-0 override the flex item's default max-content sizing —
+          without them the text hugs its unwrapped width (rendering on one huge
+          line) instead of wrapping within the container. */}
+      <div ref={textRef} className={`w-full min-w-0 text-center ${textClassName}`} style={{ fontSize }}>
         {children}
       </div>
     </div>

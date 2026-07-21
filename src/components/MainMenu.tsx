@@ -10,14 +10,9 @@ import BoxIcon from "@/components/BoxIcon";
 
 const cinzel = Cinzel({ subsets: ["latin"], weight: ["500", "700"] });
 
-// Warm amber wordmark — brighter and more saturated than the surrounding
-// brown chrome so it pops against it.
-const titleStyle = {
-  backgroundImage: "linear-gradient(160deg, #F6D9A0 0%, #E2984E 45%, #B5651D 100%)",
-};
-
-// Each game card gets its own tessera color, like tiles in a mosaic.
-const MOSAIC_ACCENTS = ["#BF953F", "#1B998B", "#6A4C93", "#C81D6B", "#2E6F95"];
+// Each game card gets its own tessera color, matching that game's own theme:
+// Songster gold, Tribial orange, Dende Namek teal-green.
+const MOSAIC_ACCENTS = ["#BF953F", "#E8681A", "#2BB673", "#C81D6B", "#2E6F95"];
 
 interface MainMenuProps {
   onSelectGame: (gameId: string) => void;
@@ -56,8 +51,7 @@ export default function MainMenu({ onSelectGame }: MainMenuProps) {
         <BoxIcon className="w-16 h-16 mb-4 drop-shadow-[0_0_16px_rgba(169,113,63,0.35)]" />
 
         <h1
-          style={titleStyle}
-          className={`${cinzel.className} text-5xl sm:text-6xl font-bold mb-10 text-center bg-clip-text text-transparent tracking-wide drop-shadow-[0_2px_10px_rgba(169,113,63,0.25)]`}
+          className={`${cinzel.className} text-5xl sm:text-6xl font-bold mb-10 text-center text-white tracking-wide drop-shadow-[0_2px_10px_rgba(169,113,63,0.25)]`}
         >
           Estebox
         </h1>
