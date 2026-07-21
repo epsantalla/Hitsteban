@@ -8,9 +8,8 @@ const LEFT = "14,30 14,70 50,90 50,50";
 const RIGHT = "86,30 86,70 50,90 50,50";
 
 /**
- * Estebox's mark: a simple isometric packing crate, sealed with a strip of
- * tape down the top seam and front edge. Pure inline SVG, no image assets;
- * kept in visual sync with the app icon (`src/app/icon.svg`).
+ * Estebox's mark: a simple isometric packing crate. Pure inline SVG, no image
+ * assets; kept in visual sync with the app icon (`src/app/icon.svg`).
  */
 export default function BoxIcon({ className }: BoxIconProps) {
   return (
@@ -41,9 +40,6 @@ export default function BoxIcon({ className }: BoxIconProps) {
         <polygon points={LEFT} fill="url(#bi-left)" />
         <polygon points={RIGHT} fill="url(#bi-right)" />
       </g>
-
-      {/* Tape piece sealing the top flaps, kept within the top face */}
-      <path d="M50 10 L50 34" stroke="#D8C79A" strokeWidth="6" strokeLinecap="round" opacity="0.9" />
     </svg>
   );
 }

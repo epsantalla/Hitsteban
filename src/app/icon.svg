@@ -30,7 +30,4 @@
     <polygon points="14,30 14,70 50,90 50,50" fill="url(#left)"/>
     <polygon points="86,30 86,70 50,90 50,50" fill="url(#right)"/>
   </g>
-
-  <!-- Tape piece sealing the top flaps, kept within the top face -->
-  <path d="M50 10 L50 34" stroke="#D8C79A" stroke-width="6" stroke-linecap="round" opacity="0.9"/>
 </svg>

@@ -394,8 +394,8 @@ export default function DendeGame({
       <div className="flex-1 flex items-center justify-center px-8 pt-24 pb-32 w-full pointer-events-none">
         {view?.kind === "card" && (
           <FitBox
-            max={40}
-            min={16}
+            max={96}
+            min={20}
             className={`w-full h-full transition-transform duration-500 ${isHolding ? "scale-95" : "scale-100"}`}
           >
             <CardTextContent text={view.text} weight={view.weight} />
@@ -403,8 +403,8 @@ export default function DendeGame({
         )}
         {view?.kind === "expiry" && (
           <FitBox
-            max={40}
-            min={16}
+            max={96}
+            min={20}
             className={`w-full h-full transition-transform duration-500 ${isHolding ? "scale-95" : "scale-100"}`}
           >
             <ExpiryTextContent text={view.text} />

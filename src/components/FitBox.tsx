@@ -4,55 +4,52 @@ import { useLayoutEffect, useRef, useState } from "react";
 
 /**
  * Multi-line text that auto-shrinks its font size to fit entirely within its
- * container (both width and height) — used for Dende's cards, whose text
- * length varies a lot and must never overflow or get clipped.
+ * container — used for Dende's cards, whose text length varies a lot and must
+ * never overflow or get clipped.
  *
- * Unlike `FitText` (single line, `nowrap`), this wraps normally, so width
- * doesn't scale linearly with font size (line count can jump). It binary
- * searches for the largest size in [min, max] whose rendered box still fits,
- * re-measuring on container resize and text change.
+ * The text fills the container's width and wraps normally, so *width* is never
+ * the binding constraint (a full-width block can't overflow horizontally, and
+ * `break-words` handles the rare too-long word). Only *height* matters: we
+ * binary-search for the largest font in [min, max] whose wrapped text still
+ * fits the container's height, re-measuring on resize and text change.
  *
- * `min` is only a *preferred* floor, not a hard one: if the text is so long
- * that even `min` overflows, the search continues below it (down to 1px) so
- * the text is always fully visible, never clipped — however small it has to
- * get.
+ * `min` is only a *preferred* floor: if even `min` overflows, the search
+ * continues below it (down to 1px) so text is never clipped, however small it
+ * has to get. `max` caps how large short text can grow.
  */
 export default function FitBox({
   children,
-  max = 40,
-  min = 16,
+  max = 64,
+  min = 18,
   className = "",
   textClassName = "",
 }: {
   children: React.ReactNode;
   /** Largest font size in px. */
   max?: number;
-  /** Smallest font size in px (floor when the text is very long). */
+  /** Smallest *preferred* font size in px (the search dips below it if needed). */
   min?: number;
   className?: string;
   textClassName?: string;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLDivElement>(null);
-  const [fontSize, setFontSize] = useState(max);
+  const [fontSize, setFontSize] = useState(min);
 
   useLayoutEffect(() => {
     const container = containerRef.current;
     const text = textRef.current;
     if (!container || !text) return;
 
-    // A margin below the container's real size: text that measures as
-    // "just barely fitting" can still visually clip a pixel or two (font
-    // metrics/descenders, sub-pixel rounding in scrollHeight/Width), so the
-    // fit check targets a deliberately smaller box than the true one.
-    const SAFETY = 0.9;
+    // Leave a little headroom below the container's true height: text that
+    // measures as "just barely fitting" can still visually clip a pixel or two
+    // (descenders, sub-pixel rounding in scrollHeight), so aim a bit smaller.
+    const SAFETY = 0.92;
 
-    const fits = (size: number) => {
+    // The text is full-width and wraps, so only vertical overflow can happen.
+    const fitsHeight = (size: number) => {
       text.style.fontSize = `${size}px`;
-      return (
-        text.scrollHeight <= container.clientHeight * SAFETY &&
-        text.scrollWidth <= container.clientWidth * SAFETY
-      );
+      return text.scrollHeight <= container.clientHeight * SAFETY;
     };
 
     // Largest size in [lo, hi] that still fits, or null if none does.
@@ -60,7 +57,7 @@ export default function FitBox({
       let best: number | null = null;
       while (lo <= hi) {
         const mid = Math.floor((lo + hi) / 2);
-        if (fits(mid)) {
+        if (fitsHeight(mid)) {
           best = mid;
           lo = mid + 1;
         } else {
@@ -89,9 +86,9 @@ export default function FitBox({
   return (
     <div ref={containerRef} className={`w-full h-full overflow-hidden flex items-center justify-center ${className}`}>
       {/* w-full + min-w-0 override the flex item's default max-content sizing —
-          without them the text hugs its unwrapped width (rendering on one huge
-          line) instead of wrapping within the container. */}
-      <div ref={textRef} className={`w-full min-w-0 text-center ${textClassName}`} style={{ fontSize }}>
+          without them the text hugs its unwrapped width (one huge line) instead
+          of wrapping. `break-words` stops a single long token from overflowing. */}
+      <div ref={textRef} className={`w-full min-w-0 break-words text-center ${textClassName}`} style={{ fontSize }}>
         {children}
       </div>
     </div>
