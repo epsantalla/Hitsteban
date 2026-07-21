@@ -7,6 +7,7 @@ import MainMenu from "@/components/MainMenu";
 import PandoraBoxIcon from "@/components/PandoraBoxIcon";
 import Songster from "@/components/games/songster/Songster";
 import Tribial from "@/components/games/tribial/Tribial";
+import Dende from "@/components/games/dende/Dende";
 
 const cinzel = Cinzel({ subsets: ["latin"], weight: ["500"] });
 
@@ -37,6 +38,10 @@ export default function Home() {
 
   if (selectedGame === "tribial") {
     return <Tribial onExit={() => setSelectedGame(null)} />;
+  }
+
+  if (selectedGame === "dende") {
+    return <Dende onExit={() => setSelectedGame(null)} />;
   }
 
   // No game selected (or an unknown id) — show the Estebox menu.

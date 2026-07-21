@@ -14,6 +14,10 @@ export interface PlaylistTracksState {
  *
  * When `initialTracks` is provided (a resumed game already has its shuffled
  * order), those are used as-is and the Spotify fetch is skipped entirely.
+ *
+ * An empty `playlistId` is treated as "nothing to load" rather than an error
+ * (e.g. Dende's Songster cards are optional, so there may be no playlist at
+ * all) — `tracks` stays empty and `loading` resolves to `false`.
  */
 export function usePlaylistTracks(
   playlistId: string,
@@ -22,12 +26,16 @@ export function usePlaylistTracks(
 ): PlaylistTracksState {
   const hasInitial = !!initialTracks && initialTracks.length > 0;
   const [tracks, setTracks] = useState<Track[]>(initialTracks ?? []);
-  const [loading, setLoading] = useState(!hasInitial);
+  const [loading, setLoading] = useState(!hasInitial && !!playlistId);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     // Resumed game: reuse the saved order, no need to hit Spotify.
     if (hasInitial) return;
+    if (!playlistId) {
+      setLoading(false);
+      return;
+    }
 
     let isMounted = true;
     setLoading(true);

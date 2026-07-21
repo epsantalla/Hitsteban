@@ -15,4 +15,9 @@ export const AVAILABLE_GAMES: GameDefinition[] = [
     name: "Tribial",
     description: "Juego de preguntas estilo Trivial",
   },
+  {
+    id: "dende",
+    name: "Dende",
+    description: "Un juego de beber inspirado por el Piccolo (pero mejor)",
+  },
 ];
