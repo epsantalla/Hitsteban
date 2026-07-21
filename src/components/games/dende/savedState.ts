@@ -12,12 +12,20 @@ import { Player } from "./cards";
 export const DENDE_GAME_ID = "dende";
 
 /** Bump when `DendeSavedState` changes shape, to invalidate old saves. */
-export const DENDE_SAVE_VERSION = 1;
+export const DENDE_SAVE_VERSION = 2;
 
-/** A norma card's rule, active for a number of rounds (null = until the game closes). */
+/**
+ * A norma card's rule. `roundsTotal` is the full number of rounds it lasts
+ * (null = until the game closes); `cardsSeen` counts real cards shown since
+ * *this norma* was created — it expires once `cardsSeen` reaches
+ * `NORMA_BUFFER_CARDS + roundsTotal * playerCount` (see `cards.ts`), i.e. a
+ * full round's worth of cards plus a flat buffer, always counted fresh from
+ * when it appeared (not from the nearest round boundary).
+ */
 export interface ActiveNorma {
   text: string;
-  roundsLeft: number | null;
+  roundsTotal: number | null;
+  cardsSeen: number;
 }
 
 /** A regular card, already fully substituted and ready to render. */
@@ -40,8 +48,6 @@ export type DendeView = CardView | ExpiryView;
 export interface DendeRuntimeState {
   activeNormas: ActiveNorma[];
   pity: Record<string, number>;
-  realCardsShown: number;
-  lastRoundProcessed: number;
   currentView: DendeView | null;
   pendingExpiries: ExpiryView[];
   tracks?: Track[];

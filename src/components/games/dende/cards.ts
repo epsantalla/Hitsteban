@@ -16,6 +16,14 @@ export interface Player {
 export const MIN_PLAYERS = 3;
 export const MAX_PLAYERS = 30;
 
+/**
+ * Flat grace period (in real cards shown) added on top of a norma's own
+ * round-based duration, counted fresh from when it appears — so a norma
+ * created right at the end of a round still gets a full round's worth of
+ * life, never expiring almost immediately.
+ */
+export const NORMA_BUFFER_CARDS = 3;
+
 export const FLAG_SPECIAL_TRIBIAL = "special_tribial";
 export const FLAG_SPECIAL_SONGSTER = "special_songster";
 

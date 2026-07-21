@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { BookOpen, Loader2, X } from "lucide-react";
+import { ArrowLeft, BookOpen, Loader2, X } from "lucide-react";
 import { usePlaylistTracks } from "@/hooks/usePlaylistTracks";
 import { useSpotifyPlayer } from "@/hooks/useSpotifyPlayer";
 import FitBox from "@/components/FitBox";
@@ -12,6 +12,7 @@ import {
   Player,
   FLAG_SPECIAL_TRIBIAL,
   FLAG_SPECIAL_SONGSTER,
+  NORMA_BUFFER_CARDS,
   pickNextCard,
   substituteCardText,
   updatePityAfterPlayerPick,
@@ -31,16 +32,20 @@ function renderTextSegments(text: string) {
   );
 }
 
+// A base shadow always applied, so text reads clearly against the busy planet
+// background regardless of weight-tier glow; the glow (if any) layers on top.
+const BASE_SHADOW = "0 2px 8px rgba(0,0,0,0.85), 0 0 3px rgba(0,0,0,0.6)";
+
 function CardTextContent({ text, weight }: { text: string; weight: number }) {
   const glow = glowForWeight(weight);
-  const style: React.CSSProperties =
+  const textShadow =
     glow === "gold"
-      ? { textShadow: "0 0 14px rgba(212,175,55,0.9), 0 0 32px rgba(212,175,55,0.55), 0 0 60px rgba(212,175,55,0.3)" }
+      ? `${BASE_SHADOW}, 0 0 14px rgba(212,175,55,0.9), 0 0 32px rgba(212,175,55,0.55), 0 0 60px rgba(212,175,55,0.3)`
       : glow === "silver"
-      ? { textShadow: "0 0 14px rgba(186,214,255,0.9), 0 0 32px rgba(150,195,255,0.55), 0 0 60px rgba(130,180,255,0.3)" }
-      : {};
+      ? `${BASE_SHADOW}, 0 0 14px rgba(186,214,255,0.9), 0 0 32px rgba(150,195,255,0.55), 0 0 60px rgba(130,180,255,0.3)`
+      : BASE_SHADOW;
   return (
-    <div className="font-bold leading-snug text-[#F4FFF8]" style={style}>
+    <div className="font-bold leading-snug text-[#F4FFF8]" style={{ textShadow }}>
       {renderTextSegments(text)}
     </div>
   );
@@ -48,11 +53,17 @@ function CardTextContent({ text, weight }: { text: string; weight: number }) {
 
 function ExpiryTextContent({ text }: { text: string }) {
   return (
-    <div className="font-bold leading-snug text-red-500" style={{ textShadow: "0 0 20px rgba(239,68,68,0.65)" }}>
+    <div className="font-bold leading-snug text-red-500" style={{ textShadow: `${BASE_SHADOW}, 0 0 20px rgba(239,68,68,0.65)` }}>
       {renderTextSegments(text)}
       <div className="mt-6 text-[1.3em] tracking-widest uppercase">SE ACABÓ</div>
     </div>
   );
+}
+
+/** Real cards a norma survives before expiring: a full round + the flat buffer. */
+function normaThreshold(norma: ActiveNorma, playerCount: number): number | null {
+  if (norma.roundsTotal === null) return null;
+  return NORMA_BUFFER_CARDS + norma.roundsTotal * playerCount;
 }
 
 interface DendeGameProps {
@@ -70,8 +81,9 @@ interface DendeGameProps {
 /**
  * Dende's main card loop: draws a weighted-random card, substitutes
  * `{player}`/`{randomplayer}`/`{randomnum}`/`{list}` tokens, tracks active
- * "normas" across rounds, and hands off to the Tribial/Songster sub-phases
- * for special cards. Dende has no natural end — it plays until `onExit`.
+ * "normas" (each with its own per-norma card-count until expiry), and hands
+ * off to the Tribial/Songster sub-phases for special cards. Dende has no
+ * natural end — it plays until `onExit`.
  */
 export default function DendeGame({
   players,
@@ -96,14 +108,18 @@ export default function DendeGame({
   const [pendingExpiries, setPendingExpiries] = useState<ExpiryView[]>(initialState?.pendingExpiries ?? []);
   const [activeNormas, setActiveNormas] = useState<ActiveNorma[]>(initialState?.activeNormas ?? []);
   const [pity, setPity] = useState<Record<string, number>>(initialState?.pity ?? {});
-  const [realCardsShown, setRealCardsShown] = useState(initialState?.realCardsShown ?? 0);
-  const [lastRoundProcessed, setLastRoundProcessed] = useState(initialState?.lastRoundProcessed ?? 0);
   const [usedTrackIds, setUsedTrackIds] = useState<string[]>(initialState?.usedTrackIds ?? []);
+
+  // Views already seen, for the "go back" button. Local-only — not persisted
+  // across a resume, since it's a convenience peek, not part of game state.
+  const [history, setHistory] = useState<DendeView[]>([]);
 
   const [subPhase, setSubPhase] = useState<"none" | "tribial" | "songster">("none");
   const [showNormas, setShowNormas] = useState(false);
   const [isHolding, setIsHolding] = useState(false);
+  const [isHoldingBack, setIsHoldingBack] = useState(false);
   const holdTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const backHoldTimerRef = useRef<NodeJS.Timeout | null>(null);
   const lastCardRef = useRef<Card | null>(null);
 
   const errorMsg = (songsterEnabled ? loadError : null) || playerError;
@@ -122,6 +138,11 @@ export default function DendeGame({
   };
 
   function advanceToNextView() {
+    if (view) {
+      const outgoing = view;
+      setHistory((h) => [...h, outgoing]);
+    }
+
     if (pendingExpiries.length > 0) {
       const [next, ...rest] = pendingExpiries;
       setPendingExpiries(rest);
@@ -137,38 +158,35 @@ export default function DendeGame({
       setPity(updatePityAfterPlayerPick(players, pity, outcome.playerPicked.id));
     }
 
-    let normas = isNormaFlag(card.flag)
-      ? [...activeNormas, { text: outcome.text, roundsLeft: parseNormaRounds(card.flag) }]
-      : activeNormas;
-
-    const nextShown = realCardsShown + 1;
-    const nextRound = Math.floor(nextShown / players.length);
-
-    if (nextRound > lastRoundProcessed) {
-      const roundsCrossed = nextRound - lastRoundProcessed;
-      const stillActive: ActiveNorma[] = [];
-      const justExpired: ExpiryView[] = [];
-      for (const norma of normas) {
-        if (norma.roundsLeft === null) {
-          stillActive.push(norma);
-          continue;
-        }
-        const roundsLeft = norma.roundsLeft - roundsCrossed;
-        if (roundsLeft <= 0) {
-          justExpired.push({ kind: "expiry", text: norma.text });
-        } else {
-          stillActive.push({ ...norma, roundsLeft });
-        }
+    // Age every active norma by this real card, splitting off any that have
+    // now reached their own threshold (a full round + the flat buffer,
+    // counted fresh from when each appeared).
+    const stillActive: ActiveNorma[] = [];
+    const justExpired: ExpiryView[] = [];
+    for (const norma of activeNormas) {
+      const aged: ActiveNorma = { ...norma, cardsSeen: norma.cardsSeen + 1 };
+      const threshold = normaThreshold(aged, players.length);
+      if (threshold !== null && aged.cardsSeen >= threshold) {
+        justExpired.push({ kind: "expiry", text: aged.text });
+      } else {
+        stillActive.push(aged);
       }
-      setActiveNormas(stillActive);
-      setPendingExpiries(justExpired);
-      setLastRoundProcessed(nextRound);
-    } else {
-      setActiveNormas(normas);
     }
 
-    setRealCardsShown(nextShown);
+    if (isNormaFlag(card.flag)) {
+      stillActive.push({ text: outcome.text, roundsTotal: parseNormaRounds(card.flag), cardsSeen: 0 });
+    }
+
+    setActiveNormas(stillActive);
+    setPendingExpiries(justExpired);
     setView({ kind: "card", text: outcome.text, weight: card.weight, flag: card.flag });
+  }
+
+  function goBack() {
+    if (history.length === 0) return;
+    const prev = history[history.length - 1];
+    setHistory(history.slice(0, -1));
+    setView(prev);
   }
 
   // Draw the very first view once ready (fresh game — resumed games already have `view`).
@@ -183,8 +201,6 @@ export default function DendeGame({
       onProgress?.({
         activeNormas,
         pity,
-        realCardsShown,
-        lastRoundProcessed,
         currentView: view,
         pendingExpiries,
         tracks,
@@ -192,7 +208,7 @@ export default function DendeGame({
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [view, activeNormas, pity, realCardsShown, lastRoundProcessed, pendingExpiries, tracks, usedTrackIds, status]);
+  }, [view, activeNormas, pity, pendingExpiries, tracks, usedTrackIds, status]);
 
   const handlePointerDown = (e: React.PointerEvent) => {
     e.preventDefault();
@@ -221,9 +237,32 @@ export default function DendeGame({
     setIsHolding(false);
   };
 
+  const handleBackPointerDown = (e: React.PointerEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (backHoldTimerRef.current || history.length === 0) return;
+
+    setIsHoldingBack(true);
+    backHoldTimerRef.current = setTimeout(() => {
+      backHoldTimerRef.current = null;
+      setIsHoldingBack(false);
+      goBack();
+    }, 600);
+  };
+
+  const handleBackPointerUpOrLeave = (e: React.PointerEvent) => {
+    e.stopPropagation();
+    if (backHoldTimerRef.current) {
+      clearTimeout(backHoldTimerRef.current);
+      backHoldTimerRef.current = null;
+    }
+    setIsHoldingBack(false);
+  };
+
   useEffect(() => {
     return () => {
       if (holdTimerRef.current) clearTimeout(holdTimerRef.current);
+      if (backHoldTimerRef.current) clearTimeout(backHoldTimerRef.current);
     };
   }, []);
 
@@ -314,19 +353,18 @@ export default function DendeGame({
         style={{ width: isHolding ? "100%" : "0%", transitionDuration: isHolding ? "600ms" : "150ms" }}
       />
 
-      <div className="absolute top-4 left-4 z-30 text-[#8FBFA4] text-sm font-mono tracking-widest pointer-events-none mt-2 flex flex-col gap-1">
-        <span>Ronda {lastRoundProcessed + 1}</span>
-        <span className="text-xs opacity-70 uppercase">Dende</span>
-      </div>
-
-      <div className="absolute top-4 right-4 z-30 mt-2 flex items-center gap-2">
+      <div className="absolute top-4 left-4 z-30">
         <button
+          onPointerDown={(e) => e.stopPropagation()}
+          onPointerUp={(e) => e.stopPropagation()}
+          onPointerLeave={(e) => e.stopPropagation()}
+          onPointerCancel={(e) => e.stopPropagation()}
           onClick={(e) => {
             e.stopPropagation();
             setShowNormas(true);
           }}
           aria-label="Normas activas"
-          className="relative p-2 border border-[#1B4433] rounded-md text-[#8FBFA4] hover:text-white hover:bg-[#0B2A20] transition"
+          className="relative p-2 border border-[#1B4433] rounded-md text-[#8FBFA4] hover:text-white hover:bg-[#0B2A20] transition bg-[#04120D]/60"
         >
           <BookOpen size={18} />
           {activeNormas.length > 0 && (
@@ -335,12 +373,19 @@ export default function DendeGame({
             </span>
           )}
         </button>
+      </div>
+
+      <div className="absolute top-4 right-4 z-30">
         <button
+          onPointerDown={(e) => e.stopPropagation()}
+          onPointerUp={(e) => e.stopPropagation()}
+          onPointerLeave={(e) => e.stopPropagation()}
+          onPointerCancel={(e) => e.stopPropagation()}
           onClick={(e) => {
             e.stopPropagation();
             handleExit();
           }}
-          className="text-xs px-3 py-1 border border-[#1B4433] rounded text-[#8FBFA4] hover:bg-[#0B2A20] transition"
+          className="text-xs px-3 py-1 border border-[#1B4433] rounded text-[#8FBFA4] hover:bg-[#0B2A20] transition bg-[#04120D]/60"
         >
           Terminar
         </button>
@@ -349,6 +394,8 @@ export default function DendeGame({
       {showNormas && (
         <div
           className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"
+          onPointerDown={(e) => e.stopPropagation()}
+          onPointerUp={(e) => e.stopPropagation()}
           onClick={() => setShowNormas(false)}
         >
           <div
@@ -365,16 +412,20 @@ export default function DendeGame({
               <p className="text-[#8FBFA4] text-sm">No hay normas activas.</p>
             ) : (
               <div className="flex flex-col gap-4">
-                {activeNormas.map((norma, i) => (
-                  <div key={i} className="p-4 rounded-xl bg-[#04120D] border border-[#1B4433]">
-                    <p className="text-[#EAF7EE] text-sm mb-2">{renderTextSegments(norma.text)}</p>
-                    <p className="text-xs text-[#2BB673] uppercase tracking-widest">
-                      {norma.roundsLeft === null
-                        ? "Hasta el final de la partida"
-                        : `${norma.roundsLeft} ronda${norma.roundsLeft === 1 ? "" : "s"} restante${norma.roundsLeft === 1 ? "" : "s"}`}
-                    </p>
-                  </div>
-                ))}
+                {activeNormas.map((norma, i) => {
+                  const threshold = normaThreshold(norma, players.length);
+                  const remaining = threshold === null ? null : Math.max(0, threshold - norma.cardsSeen);
+                  return (
+                    <div key={i} className="p-4 rounded-xl bg-[#04120D] border border-[#1B4433]">
+                      <p className="text-[#EAF7EE] text-sm mb-2">{renderTextSegments(norma.text)}</p>
+                      <p className="text-xs text-[#2BB673] uppercase tracking-widest">
+                        {remaining === null
+                          ? "Hasta el final de la partida"
+                          : `${remaining} tarjeta${remaining === 1 ? "" : "s"} restante${remaining === 1 ? "" : "s"}`}
+                      </p>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -402,6 +453,25 @@ export default function DendeGame({
         )}
         {!view && <Loader2 className="animate-spin text-[#2BB673] w-10 h-10" />}
       </div>
+
+      {history.length > 0 && (
+        <div className="absolute bottom-6 left-4 z-30">
+          <button
+            onPointerDown={handleBackPointerDown}
+            onPointerUp={handleBackPointerUpOrLeave}
+            onPointerLeave={handleBackPointerUpOrLeave}
+            onPointerCancel={handleBackPointerUpOrLeave}
+            className="relative flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[#1B4433] bg-[#04120D]/60 text-[#8FBFA4] overflow-hidden"
+          >
+            <div
+              className="absolute left-0 top-0 bottom-0 bg-[#2BB673]/40 transition-all ease-linear"
+              style={{ width: isHoldingBack ? "100%" : "0%", transitionDuration: isHoldingBack ? "600ms" : "150ms" }}
+            />
+            <ArrowLeft size={16} className="relative z-10" />
+            <span className="relative z-10 text-xs uppercase tracking-widest">Atrás</span>
+          </button>
+        </div>
+      )}
 
       <div className="pb-10 flex justify-center pointer-events-none">
         <p className={`text-sm uppercase tracking-widest transition-colors duration-300 ${isHolding ? "text-[#2BB673]" : "text-[#8FBFA4]"}`}>

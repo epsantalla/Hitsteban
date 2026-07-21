@@ -134,6 +134,10 @@ export default function SongsterCard({
 
         <div className="absolute top-4 right-4 z-20 mt-2">
           <button
+            onPointerDown={(e) => e.stopPropagation()}
+            onPointerUp={(e) => e.stopPropagation()}
+            onPointerLeave={(e) => e.stopPropagation()}
+            onPointerCancel={(e) => e.stopPropagation()}
             onClick={(e) => { e.stopPropagation(); player.disconnect(); onExit(); }}
             className="text-xs px-3 py-1 border border-[#1B4433] rounded text-[#8FBFA4] hover:bg-[#0B2A20] transition"
           >

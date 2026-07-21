@@ -84,11 +84,14 @@ export default function TribialCards({ onDone, onExit }: { onDone: () => void; o
 
       <div className="absolute top-4 left-4 z-20 text-[#8FBFA4] text-sm font-mono tracking-widest pointer-events-none mt-2 flex flex-col gap-1">
         <span>{currentIndex + 1} / {questions.length}</span>
-        <span className="text-xs opacity-70 uppercase">Trivia namekiana</span>
       </div>
 
       <div className="absolute top-4 right-4 z-20 mt-2">
         <button
+          onPointerDown={(e) => e.stopPropagation()}
+          onPointerUp={(e) => e.stopPropagation()}
+          onPointerLeave={(e) => e.stopPropagation()}
+          onPointerCancel={(e) => e.stopPropagation()}
           onClick={(e) => { e.stopPropagation(); onExit(); }}
           className="text-xs px-3 py-1 border border-[#1B4433] rounded text-[#8FBFA4] hover:bg-[#0B2A20] transition"
         >
