@@ -7,6 +7,7 @@ import ClassicGame from "./ClassicGame";
 import CarouselGame from "./CarouselGame";
 import { AVAILABLE_MODES } from "./modes";
 import { loadSavedGame, saveSavedGame, clearSavedGame, SavedGame } from "@/lib/savedGame";
+import { useUserPlaylists } from "@/hooks/useUserPlaylists";
 import {
   SONGSTER_GAME_ID,
   SONGSTER_SAVE_VERSION,
@@ -28,7 +29,7 @@ export default function Songster({ onExit }: { onExit: () => void }) {
   const { data: session, status } = useSession();
   const [playlistId, setPlaylistId] = useState("");
   const [isGameStarted, setIsGameStarted] = useState(false);
-  const [userPlaylists, setUserPlaylists] = useState<any[]>([]);
+  const userPlaylists = useUserPlaylists(session?.accessToken);
   const [selectedMode, setSelectedMode] = useState(AVAILABLE_MODES[0].id);
 
   // A previously saved, resumable game (or null). Refreshed whenever we return
@@ -96,21 +97,6 @@ export default function Songster({ onExit }: { onExit: () => void }) {
     setResume(null);
     setResumeState(null);
   };
-
-  useEffect(() => {
-    if (session?.accessToken) {
-      fetch("https://api.spotify.com/v1/me/playlists?limit=50", {
-        headers: { Authorization: `Bearer ${session.accessToken}` }
-      })
-      .then(res => res.json())
-      .then(data => {
-        if (data.items) {
-          setUserPlaylists(data.items.filter((p: any) => p !== null));
-        }
-      })
-      .catch(err => console.error("Error fetching playlists", err));
-    }
-  }, [session?.accessToken]);
 
   if (status === "loading") {
     return (

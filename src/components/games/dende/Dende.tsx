@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { Bangers } from "next/font/google";
 import { Plus, X } from "lucide-react";
 import { loadSavedGame, saveSavedGame, clearSavedGame, SavedGame } from "@/lib/savedGame";
+import { useUserPlaylists } from "@/hooks/useUserPlaylists";
 import DendeGame from "./DendeGame";
 import NamekBackground from "./NamekBackground";
 import { MAX_PLAYERS, MIN_PLAYERS, Player } from "./cards";
@@ -46,7 +47,7 @@ export default function Dende({ onExit }: { onExit: () => void }) {
   ]);
   const [songsterEnabled, setSongsterEnabled] = useState(false);
   const [playlistId, setPlaylistId] = useState("");
-  const [userPlaylists, setUserPlaylists] = useState<any[]>([]);
+  const userPlaylists = useUserPlaylists(session?.accessToken);
   const [isGameStarted, setIsGameStarted] = useState(false);
 
   // Restore the setup draft saved just before a Spotify login redirect, if any.
@@ -106,18 +107,6 @@ export default function Dende({ onExit }: { onExit: () => void }) {
     clearSavedGame();
     setResume(null);
   };
-
-  useEffect(() => {
-    if (!session?.accessToken) return;
-    fetch("https://api.spotify.com/v1/me/playlists?limit=50", {
-      headers: { Authorization: `Bearer ${session.accessToken}` },
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.items) setUserPlaylists(data.items.filter((p: any) => p !== null));
-      })
-      .catch((err) => console.error("Error fetching playlists", err));
-  }, [session?.accessToken]);
 
   // Auto-save callback handed to DendeGame. Dende owns players/songsterEnabled/
   // playlistId; DendeGame reports its own runtime progress on each checkpoint.
