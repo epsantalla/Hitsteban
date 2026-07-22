@@ -18,6 +18,17 @@ import {
 
 const bangers = Bangers({ subsets: ["latin"], weight: "400" });
 
+/** sessionStorage key for the in-progress setup form, saved just before the
+ * Spotify OAuth redirect (which fully reloads the app) and restored on
+ * mount so login returns to the game being configured, not a blank form. */
+const DENDE_DRAFT_KEY = "dende:setupDraft";
+
+interface DendeSetupDraft {
+  players: Player[];
+  songsterEnabled: boolean;
+  playlistId: string;
+}
+
 /**
  * The Dende game module. Self-contained: players are entered locally (no
  * account needed), and Spotify auth is only requested if the optional
@@ -35,7 +46,29 @@ export default function Dende({ onExit }: { onExit: () => void }) {
   ]);
   const [songsterEnabled, setSongsterEnabled] = useState(false);
   const [playlistId, setPlaylistId] = useState("");
+  const [userPlaylists, setUserPlaylists] = useState<any[]>([]);
   const [isGameStarted, setIsGameStarted] = useState(false);
+
+  // Restore the setup draft saved just before a Spotify login redirect, if any.
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem(DENDE_DRAFT_KEY);
+      if (!raw) return;
+      sessionStorage.removeItem(DENDE_DRAFT_KEY);
+      const draft = JSON.parse(raw) as DendeSetupDraft;
+      setPlayers(draft.players);
+      setSongsterEnabled(draft.songsterEnabled);
+      setPlaylistId(draft.playlistId ?? "");
+    } catch {}
+  }, []);
+
+  const handleSpotifyLogin = () => {
+    try {
+      const draft: DendeSetupDraft = { players, songsterEnabled, playlistId };
+      sessionStorage.setItem(DENDE_DRAFT_KEY, JSON.stringify(draft));
+    } catch {}
+    signIn("spotify");
+  };
 
   // A previously saved, resumable game (or null).
   const [resume, setResume] = useState<SavedGame<DendeSavedState> | null>(null);
@@ -73,6 +106,18 @@ export default function Dende({ onExit }: { onExit: () => void }) {
     clearSavedGame();
     setResume(null);
   };
+
+  useEffect(() => {
+    if (!session?.accessToken) return;
+    fetch("https://api.spotify.com/v1/me/playlists?limit=50", {
+      headers: { Authorization: `Bearer ${session.accessToken}` },
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.items) setUserPlaylists(data.items.filter((p: any) => p !== null));
+      })
+      .catch((err) => console.error("Error fetching playlists", err));
+  }, [session?.accessToken]);
 
   // Auto-save callback handed to DendeGame. Dende owns players/songsterEnabled/
   // playlistId; DendeGame reports its own runtime progress on each checkpoint.
@@ -244,7 +289,7 @@ export default function Dende({ onExit }: { onExit: () => void }) {
             {songsterEnabled && !session?.accessToken && (
               <button
                 type="button"
-                onClick={() => signIn("spotify")}
+                onClick={handleSpotifyLogin}
                 className="mt-2 py-3 rounded-lg bg-gradient-to-r from-[#2BB673] to-[#1B998B] text-black font-bold transition-all hover:scale-[1.02] active:scale-95"
               >
                 Iniciar sesión con Spotify Premium
@@ -264,6 +309,42 @@ export default function Dende({ onExit }: { onExit: () => void }) {
                   onChange={(e) => setPlaylistId(e.target.value)}
                   className="px-3 py-3 bg-[#04120D] border border-[#1B4433] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#2BB673] text-white placeholder-[#3A5C4E]"
                 />
+
+                {userPlaylists.length > 0 && (
+                  <div className="mt-1">
+                    <p className="text-xs text-[#8FBFA4] mb-2">O elige de tu biblioteca</p>
+                    <div
+                      className="flex overflow-x-auto gap-3 pb-2 snap-x touch-pan-x [&::-webkit-scrollbar]:hidden"
+                      style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+                    >
+                      {userPlaylists.map((playlist) => (
+                        <button
+                          key={playlist.id}
+                          type="button"
+                          onClick={() => setPlaylistId(playlist.id)}
+                          className="flex-shrink-0 w-20 flex flex-col items-center gap-1.5 snap-center group text-left transition-transform active:scale-95"
+                        >
+                          <div
+                            className={`w-20 h-20 rounded-md bg-[#04120D] overflow-hidden shadow-lg border-2 transition-colors ${
+                              playlistId === playlist.id ? "border-[#2BB673]" : "border-transparent"
+                            }`}
+                          >
+                            {playlist.images?.[0]?.url ? (
+                              <img src={playlist.images[0].url} alt={playlist.name} className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-[#3A5C4E] text-[10px] uppercase font-bold tracking-widest">
+                                Mix
+                              </div>
+                            )}
+                          </div>
+                          <span className="text-[10px] text-[#8FBFA4] w-full truncate text-center group-hover:text-white transition-colors">
+                            {playlist.name}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>

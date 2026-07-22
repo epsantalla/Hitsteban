@@ -1,7 +1,7 @@
 "use client";
 
 import { useSession } from "next-auth/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Cinzel } from "next/font/google";
 import MainMenu from "@/components/MainMenu";
 import BoxIcon from "@/components/BoxIcon";
@@ -11,6 +11,8 @@ import Dende from "@/components/games/dende/Dende";
 
 const cinzel = Cinzel({ subsets: ["latin"], weight: ["500"] });
 
+const SELECTED_GAME_KEY = "estebox:selectedGame";
+
 /**
  * Estebox entry point / router. Estebox is a multi-game site: the main menu is
  * the landing screen, and each game is a self-contained module that handles its
@@ -19,7 +21,18 @@ const cinzel = Cinzel({ subsets: ["latin"], weight: ["500"] });
  */
 export default function Home() {
   const { status } = useSession();
-  const [selectedGame, setSelectedGame] = useState<string | null>(null);
+  // Initialized from sessionStorage so a full-page reload (e.g. returning from
+  // the Spotify OAuth redirect, which has no in-app URL to come back to) lands
+  // back on the game that was active instead of resetting to the main menu.
+  const [selectedGame, setSelectedGame] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
+    return sessionStorage.getItem(SELECTED_GAME_KEY);
+  });
+
+  useEffect(() => {
+    if (selectedGame) sessionStorage.setItem(SELECTED_GAME_KEY, selectedGame);
+    else sessionStorage.removeItem(SELECTED_GAME_KEY);
+  }, [selectedGame]);
 
   if (status === "loading") {
     return (
