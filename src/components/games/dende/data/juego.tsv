@@ -1,100 +1,108 @@
 nombre	texto	peso	flag
+Qué prefieres?	{list;queprefieres} Todos los jugadores votan: mano arriba para la primera opción, mano abajo para la segunda opción. El grupo minoritario bebe {randomnum;2:4} tragos. Si hay empate beben todos.	75	
 bebe un trago	{player} bebes un trago!	80	
-concurso pestañeo	{player}, tú y {randomplayer} hacéis un concurso de aguantar sin pestañear, el primero que pestañee bebe 2 tragos	8	
-categorías 	{player} escoge una categoría, empezando por el jugador de tu derecha, cada jugador deberá decir algo de esa categoría hasta que alguien falle, esa persona bebe 4 tragos	30	
-linkeo	{player} elige a una persona que beberá siempre que te toque beber	10	norma_inf
-songster	{player}, sonará una canción, tienes 45 segundos para decir: *Nombre de la Canción*, *Artista* y *Año de Publicación*. Si aciertas el nombre, reparte 2 tragos. Si aciertas el artista, reparte 1 trago. Si aciertas el año, reparte 5 tragos.	50	special_songster
-mentira o verdad	{player} di una afirmación sobre ti, verdadera o falsa. El resto de jugadores votan a la vez si creen que es verdadera o falsa, las personas que fallen beben 3 tragos	30	
-cascada	Todo el mundo empieza a beber! Hasta que pare *{player}* no podrá parar el jugador de su derecha y así sucesivamente	4	
-bebe varios tragos	{player} bebes {randomnum;2:7} tragos!	50	
 mandas beber un trago	{player}, mandas beber un trago a otro jugador	80	
-mandas varios tragos	{player} repartes {randomnum;2:7} tragos	50	
-imitacion	{player} imita a otro jugador de tu elección, si {randomplayer} adivina a quien imitas, la persona imitada bebe 5 tragos, si no, {player} y {randomplayer} bebéis 3 tragos cada uno	15	
-debate	{player} eres el rey! Elige un tema de debate y elige la postura que tendrá que defender {randomplayer} y la que tendrá que defender {randomplayer2}. Tu eres el moderador del debate, cuando termine, el resto de la mesa vota al ganador del debate (si hay empate decide el rey). El perdedor bebe 5 tragos	10	
-norma_sino	{player} no puedes decir ni SI ni NO, si lo haces, bebes 1 trago	15	norma_1
-yo nunca	{player} dice "Yo nunca...", el que lo haya hecho bebe 1 trago.	20	
-el pulgar	{player} eres el maestro del pulgar. Cuando pongas el pulgar en la mesa, los demás deben hacerlo. El último bebe 2 tragos.	10	norma_1
-rima	{player} dice una palabra, los demás en sentido horario deben rimar con ella. El primero que falle o repita bebe 3 tragos.	25	
-pregunta	{player} eres el maestro de las preguntas. Si haces una pregunta y alguien te responde, esa persona bebe 1 trago.	15	norma_2
-vikingo	{player} eres Haaland. Cuando hagas cuernos con los dedos, el resto debe remar. El último en remar bebe 2 tragos.	5	norma_1
-historia	{player} empieza una historia con una palabra. El siguiente añade otra palabra repitiendo las anteriores. Quien se equivoque bebe 4 tragos.	20	
-piedra papel tijera	{player} juega a piedra, papel o tijera con {randomplayer}. El perdedor bebe 2 tragos.	30	
-idioma	{player} elige un idioma. Todos deben hablar con acento de ese idioma. El primero que lo olvide bebe 3 tragos.	25	
-zurdos	A partir de ahora todos deben beber con la mano no dominante. El que se equivoque bebe 1 trago extra.	10	norma_1
-contacto visual	{player} no puede apartar la mirada de {randomplayer} mientras beben 2 tragos.	10	
-cancioncilla	{player} debe cantar todo lo que diga. Si habla normal, bebe 3 tragos.	15	norma_1
-nombres prohibidos	Está prohibido decir el nombre de cualquier jugador. Quien lo diga bebe 2 tragos.	10	norma_1
-brindis	{player} propone un brindis. Todos beben 1 trago.	50	
-chupito o verdad	{player} elige: o responde a una pregunta comprometida del grupo o se bebe 5 tragos	20	
-medusa	Todos agachan la cabeza. A la de 3, todos levantan la vista y miran a alguien. Si dos personas se miran a los ojos, beben 3 tragos.	15	
-pares o nones	{player} juega a pares o nones con {randomplayer}. El perdedor bebe 2 tragos.	15	
-sin dientes	{player} debe hacer reír a {randomplayer} sin enseñar los dientes. Si lo consigue, {randomplayer} bebe 3 tragos. Si no, {player} bebe 3 tragos.	7	
-el abecedario	{player} dice una categoría. Empezando por su derecha cada jugador dice una palabra de esa categoría siguiendo el abecedario. Quien falle bebe 3 tragos.	20	
+bebe varios tragos	{player} bebes {randomnum;2:7} tragos!	65	
+mandas varios tragos	{player} repartes {randomnum;2:7} tragos	65	
+songster	{player}, sonará una canción, tienes 45 segundos para decir: *Nombre de la Canción*, *Artista* y *Año de Publicación*. Si aciertas el nombre, reparte 3 tragos. Si aciertas el artista, reparte 2 trago. Si aciertas el año, reparte {randomnum;5:9} tragos.	50	special_songster
+brindis	{player} propone un brindis. Todos beben 1 trago.	40	
+elige a quien	{player} si tuvieses que elegir a {randomplayer} o a {randomplayer2} para {list;situacionese}, a quien elegirías? El elegido reparte {randomnum;4:6} tragos.	50	
+probable que	A la de 3, todos señalan al jugador que creen que es más probable que {list;probable}. El más votado bebe tantos tragos como votos reciba.	45	
 trago solidario	{player} bebe 1 trago y elige a otra persona para que beba otro trago con él/ella.	40	
-ultima pelicula	Todo el mundo dice la última película que ha visto, las personas que coincidan con otras beben 1 trago.	7	
-Tattoos sí	Todos los que tengan algún tattoo beben 2 tragos	15	
-Tattoos no	Todos los que no tengan ningún tattoo beben 2 tragos	15	
+acento	{player} tienes que hablar con acento {list;acentos}, si te olvidas bebes 1 trago.	25	norma_2
+pregunta c	{player}, {list;preguntac} Responde honestamente o bebe 7 tragos.	35	
+tribial	{player} vas a responder 3 preguntas de cultura general. Repartes tantos tragos x3 como preguntas aciertes y te bebes x3 como preguntas falles	30	special_tribial
+Mímica	{player} representa una película sin hablar y {randomplayer} tiene que adivinarla, si acertáis repartís {randomnum;4:7} tragos, si no, os los bebeis, teneis 30s. Pelicula en la siguiente tarjeta. && La película es: {list;pelis} {timer;30}	35	
+categorías 	{player} escoge una categoría, empezando por el jugador de tu derecha, cada jugador deberá decir algo de esa categoría hasta que alguien falle, esa persona bebe {randomnum;3:5} tragos	30	
+mentira o verdad	{player} di una afirmación sobre ti, verdadera o falsa. El resto de jugadores votan a la vez si creen que es verdadera o falsa, las personas que fallen beben 3 tragos	30	
+piedra papel tijera	{player} juega a piedra, papel o tijera con {randomplayer}. El perdedor bebe 2 tragos.	15	
+rima	{player} dice una palabra, los demás en sentido horario deben rimar con ella. El primero que falle o repita bebe 3 tragos.	15	
+	{player} vas a dibujar algo en la espalda de {randomplayer}. Si acierta que dibujaste repartís 10 tragos conjuntamente, si falla bebéis 10 tragos entre los dos (repartidlos como querais). Tenéis 30s. Pasa a la siguiente tarjeta para ver que tienes que dibujar! && Dibuja un/a *{list;dibujosfaciles}* en la espalda de {randomplayer} {timer;30}	20	
+linkeo	{player} elige a una persona que beberá siempre que te toque beber	20	norma_inf
+yo nunca	{player} dice "Yo nunca...", el que lo haya hecho bebe 1 trago.	25	
+historia	{player} empieza una historia con una palabra. El siguiente añade otra palabra repitiendo las anteriores. Quien se equivoque bebe 4 tragos.	20	
+chupito o verdad	{player} elige: o responde a una pregunta comprometida del grupo o se bebe 5 tragos	20	
+el abecedario	{player} dice una categoría. Empezando por su derecha cada jugador dice una palabra de esa categoría siguiendo el abecedario. Quien falle bebe 3 tragos.	20	
 Solteros 	¡Los solteros beben 3 tragos para ahogar sus penas! 	20	
 Emparejados	¡Los emparejados beben 3 tragos para celebrar el amor!	20	
-Cumpleaños	{player} di los cumpleaños del resto de jugadores, reparte tantos tragos como aciertes y bebe los que no	10	
-Aaaaaaa	Bebes tantos tragos como "A" haya en tu nombre	6	
-tribial	{player} vas a responder 3 preguntas de cultura general. Repartes tantos tragos x3 como preguntas aciertes y te bebes x3 como preguntas falles	35	special_tribial
-Eeeeeee	Bebes tantos tragos como "E" haya en tu nombre	6	
-Iiiiiii	Bebes tantos tragos como "I" haya en tu nombre	6	
-Ooooooo	Bebes tantos tragos como "O" haya en tu nombre	6	
-Uuuuuuu	Bebes tantos tragos como "U" haya en tu nombre	6	
-El arte de performear	Por turnos, decid el nombre de una mujer negra famosa, el que no sepa o repita bebe 3 tragos. Empieza {player}	5	
-Ludopatía?	{player}, cada vez que te toque beber puedes decir "doble o nada" y jugártelo a un cara o cruz	15	norma_1
-Ludopatía extreme?	{player}, cada vez que toque beber (a ti o otras personas) puedes decir "doble o nada" y jugártelo a un cara o cruz	4	norma_1
-acento	{player} tienes que hablar con acento {list;acentos}, si te olvidas bebes 1 trago.	40	norma_2
-Ludopatía chaos?	Aplica a todo el mundo: cada vez que toque beber se puede decir "doble o nada" y jugártelo a un cara o cruz	5	norma_1
-chiste malo	{player} cuenta un chiste. Si nadie se ríe, bebes 3 tragos. Si alguien se ríe, esa persona bebe 3 tragos.	10	
-Midas	Consigue la inmunidad a beber durante 3 rondas, comienza la subasta con 2 tragos, ¿Alguien da más?	10	norma_3
 Teléfono Rojo	A partir de ahora quien use el móvil bebe 5 tragos	20	norma_2
-conexion	{player} y {randomplayer} cuentan hasta 3 y dicen una palabra a la vez. Si no dicen la misma, beben 3 tragos cada uno. Si coinciden, reparten 10 tragos.	15	
-Duchiña	{player} Bebe 2 tragos si te has duchado hoy	12	
-No Duchiña	{player} Bebe 5 tragos si no te has duchado hoy, cerdo	12	
-t-rex	{player}, tienes que beber y hacer todo con los brazos pegados al cuerpo como un T-Rex. Si separas los codos, bebes 2 tragos.	8	norma_1
-palabra prohibida	{player} elige una palabra. Quien la diga bebe 1 trago.	15	norma_1
 dance party	{player} hace un paso de baile, el de su derecha lo repite y añade otro. Quien se equivoque en la cadena bebe 4 tragos.	20	
-criminal	A la de 3, todos señalan al jugador que creen que es más probable que acabe en la cárcel. El más votado bebe tantos tragos como votos reciba.	8	
-Rich bitch	Los de iPhone, beben 5 tragos por chulos	10	
-majestad	A partir de ahora {player} se llamará "Su Majestad". Quien se dirija a ti de otra forma, bebe 2 tragos.	15	norma_1
 tararara	{player} tararea una canción durante 10 segundos. El primero en adivinarla reparte 3 tragos. Si nadie la adivina, bebe 3 tragos.	20	
-Dep	{player} bebe tantos tragos como exs tengas	20	
-	{player} dibuja un/a *{list;dibujosfaciles}* en la espalda de {randomplayer}. Si acierta que dibujaste repartís 10 tragos conjuntamente, si falla bebéis 10 tragos entre los dos (repartidlos como querais)	25	
+Dep	{player} bebe tantos tragos como exs tengas	15	
+2truthsandalie	{player} cuenta dos verdades y una mentira sobre ti. Quienes adivinen la mentira reparten 2 tragos. Por cada persona que falle, tú repartes 1 trago.	25	
+Mano rápida	Manos al centro! El último que lo haga bebe 3 tragos	20	
+IQ 9000	Elegid juntos al jugador más listo, que recibirá 3 tragos	6	
+IQ 27	Elegid juntos al jugador más tonto, que recibirá 3 tragos	6	
+imitacion	{player} imita a otro jugador de tu elección, si {randomplayer} adivina a quien imitas (tiene 1 intento), la persona imitada bebe 5 tragos, si no, {player} y {randomplayer} bebéis 3 tragos cada uno	15	
+norma_sino	{player} no puedes decir ni SI ni NO, si lo haces, bebes 1 trago	15	norma_1
+pregunta	{player} eres el maestro de las preguntas. Si haces una pregunta y alguien te responde, esa persona bebe 1 trago.	15	norma_2
+cancioncilla	{player} debe cantar todo lo que diga. Si habla normal, bebe 3 tragos.	15	norma_1
+medusa	Todos agachan la cabeza. A la de 3, todos levantan la vista y miran a alguien. Si dos personas se miran a los ojos, beben {randomnum;1:4} tragos.	15	
+pares o nones	{player} juega a pares o nones con {randomplayer}. El perdedor bebe 2 tragos.	15	
+Tattoos sí	Todos los que tengan algún tattoo beben 2 tragos	15	
+Tattoos no	Todos los que no tengan ningún tattoo beben 2 tragos	15	
+Ludopatía?	{player}, cada vez que te toque beber puedes decir "doble o nada" y jugártelo a un cara o cruz	15	norma_1
+conexion	{player} y {randomplayer} cuentan hasta 3 y dicen una palabra a la vez. Si no dicen la misma, beben 3 tragos cada uno. Si coinciden, reparten 10 tragos.	15	
+palabra prohibida	{player} elige una palabra. Quien la diga bebe 1 trago.	15	norma_1
+majestad	A partir de ahora {player} se llamará "Su Majestad". Quien se dirija a ti de otra forma, bebe 2 tragos.	15	norma_1
 Anfitrion	El anfitrión de hoy bebe 4 tragos, si no lo hay, bebe {player}	15	
-Morocho	{player} reparte 3 tragos a un jugador que esté más moreno que tú, si no lo hay, los bebes tú	10	
-Blanquiño	{player} reparte 3 tragos a un jugador que esté más blanco que tú, si no lo hay, los bebes tú	10	
-Qué prefieres?	{list;queprefieres} Todos los jugadores votan: mano arriba para la primera opción, mano abajo para la segunda opción. El grupo minoritario bebe 2 tragos. Si hay empate beben todos.	100
 Lagunas	{player} si alguna vez has tenido lagunas por culpa del alcohol bebe 4 tragos, si no, repártelos	15	
-El tabaco mata	Todo el mundo: bebe un trago por cada piti/peta que te hayas fumado esta noche	3	
 Amor	{player} Dale 4 tragos al jugador que más quieras	15	
 Accesorio	{player} di un accesorio, quienes lo lleven beben 2 tragos	15	
 Pregunta	{player} haz una pregunta. La primera persona que responde reparte 2 tragos	15	
 Vasos vacíos 	{player} bebe tantos tragos como vasos NO vacíos haya en la mesa	15	
-anecdota	{player}, confiesa algo vergonzoso te haya pasado recientemente. Si la mayoría del grupo aprueba la anécdota, repartes 4 tragos. Si les parece aburrida, te los bebes tú.	10	
-Matrimonio	La persona que haya estado saliendo con alguien durante más tiempo reparte 4 tragos	11	
-Altura	{player} Reparte 2 tragos a un jugador más alto que tú, si es posible... Si no, los bebes tú	12	
-Bajura	{player} Reparte 2 tragos a un jugador más bajo que tú, si es posible... Si no, los bebes tú	12	
-IQ 9000	Elegid juntos al jugador más listo, que recibirá 3 tragos	16	
-arzobispo	{player} di "El arzobispo de Constantinopla se quiere desconstantinopolizar" rápido y sin trabarte. Si fallas bebes 4, si lo clavas repartes 4.	8	
-2truthsandalie	{player} cuenta dos verdades y una mentira sobre ti. Quienes adivinen la mentira reparten 2 tragos. Por cada persona que falle, tú repartes 1 trago.	20	
-IQ 27	Elegid juntos al jugador más tonto, que recibirá 3 tragos	16	
 Sexy boy	Para las chicas, bebed tantos tragos como tíos buenos haya en la partida	15	
 Sexy girl	Para los chicos, bebed tantos tragos como tíos buenos haya en la partida	15	
-amnesia de nombres	{player} a partir de ahora no puedes llamar a nadie por su nombre de pila, debes inventar un apodo para dirigirte a ellos. Si usas un nombre real, bebes 2 tragos.	12	norma_2
-El arte de no performear	Por turnos, decid nombres de hombres con antecedentes de violencia contra sus parejas. El que no sepa o repita bebe. Empieza {player}	5	
-Pelo	Los jugadores con el pelo más largo beben 3 tragos	12	
-No pelo	Los jugadores con la menor cantidad de pelo en la cabeza beben 3 tragos	12	
 spicyness	{player}, acércate y susúrrale algo sugerente o sucio al oído a {randomplayer}. Si se ríe, sonroja o aparta, bebe 3 tragos. Si no reacciona, te los bebes tú.	15	
 telenovela	{player} y {randomplayer}, acercaos dramáticamente como si fuerais a besaros en el clímax de una telenovela, pero en el último segundo daos la mano muy formalmente. Si alguno se ríe en el proceso, bebe 4 tragos.	15	
-Laburar	{player} manda beber 2 tragos a aquellas personas que creas que tienen menos horas cotizadas que tú	7	
-Lengua	Los que llegan a tocarse la nariz con la lengua reparten 3 tragos	10	
-radio amor	{player}, a partir de ahora debes hablar con voz profunda y seductora, como un locutor de radio romántica de las 3 AM. Si usas tu voz normal, bebes 2 tragos.	6	norma_1
 Who?	{player} dale 2 tragos a la persona que menos conozcas	15	
 Uyuyuyuyuy	Bebe 3 tragos si alguna vez has visto a uno de los presentes en bolas	15	
 seduccion animal	{player}, tienes que intentar seducir a {randomplayer} haciendo únicamente ruidos y movimientos de un animal de tu elección. Si {randomplayer} se ríe, bebe 3 tragos. Si no, los bebes tú.	15	
-y punch	Todo el mundo bebe 3 tragos menos {player}	15	
-Carmen	Bebes por cada "N", "E", "M", "R", "A", "C" que haya en tu nombre (según sale en tu DNI)	5	
+y punch	Todo el mundo bebe {randomnum;1:6} tragos menos {player}	20	
+Duchiña	{player} Bebe 2 tragos si te has duchado hoy	12	
+No Duchiña	{player} Bebe 5 tragos si no te has duchado hoy, cerdo	12	
+Altura	{player} Reparte 2 tragos a un jugador más alto que tú, si es posible... Si no, los bebes tú	10	
+Bajura	{player} Reparte 2 tragos a un jugador más bajo que tú, si es posible... Si no, los bebes tú	10	
+amnesia de nombres	{player} a partir de ahora no puedes llamar a nadie por su nombre de pila, debes inventar un apodo para dirigirte a ellos. Si usas un nombre real, bebes 2 tragos.	12	norma_2
+Pelo	Los jugadores con el pelo más largo beben 3 tragos	12	
+No pelo	Los jugadores con la menor cantidad de pelo en la cabeza beben 3 tragos	12	
+emparejados	Todo el mundo tiene que abrazarse con otra persona, quien se quede triste y solitario, bebe 3 tragos. No valen abrazos de 3, pillines	10	special_impares
+CAH	{player} empieza una frase, por turnos los jugadores debéis acabarla. El mejor final reparte 5 tragos y el peor los bebe. Decide {player}	12	
+El rey del sí	{player} es el "Rey del Sí". Todo el mundo tiene que responder "sí" a cualquier cosa que diga {player}. Quien diga "no" bebe 2 tragos	12	norma_1
+ola	{player} empieza una ola, quien la lie bebe {randomnum;3:10} tragos (no es feliz)	5	
+quien es quien	{player} debe definir al siguiente jugador con 3 palabras, el que acierte quién es reparte 3 tragos. Empieza adivinando {randomplayer} && El jugador es: {randomplayer2}	15	
+Matrimonio	La persona que haya estado saliendo con alguien durante más tiempo reparte 4 tragos	10	
+debate	{player} eres el rey! Elige un tema de debate y elige la postura que tendrá que defender {randomplayer} y la que tendrá que defender {randomplayer2}. Tu eres el moderador del debate, cuando termine, el resto de la mesa vota al ganador del debate (si hay empate decide el rey). El perdedor bebe 5 tragos	10	
+el pulgar	{player} eres el maestro del pulgar. Cuando pongas el pulgar en la mesa, los demás deben hacerlo. El último bebe 2 tragos.	10	norma_1
+zurdos	A partir de ahora todos deben beber con la mano no dominante. El que se equivoque bebe 1 trago extra.	10	norma_1
+contacto visual	{player} no puede apartar la mirada de {randomplayer} mientras beben 2 tragos.	10	
+nombres prohibidos	Está prohibido decir el nombre de cualquier jugador. Quien lo diga bebe 2 tragos.	10	norma_1
+Cumpleaños	{player} di los cumpleaños del resto de jugadores, reparte tantos tragos como aciertes y bebe los que no	10	
+chiste malo	{player} cuenta un chiste. Si nadie se ríe, bebes 3 tragos. Si alguien se ríe, esa persona bebe 3 tragos.	10	
+Midas	Consigue la inmunidad a beber durante 3 rondas, comienza la subasta con 2 tragos, ¿Alguien da más?	10	norma_3
+Rich bitch	Los de iPhone, beben 5 tragos por chulos	10	
+Morocho	{player} reparte 3 tragos a un jugador que esté más moreno que tú, si no lo hay, los bebes tú	10	
+Blanquiño	{player} reparte 3 tragos a un jugador que esté más blanco que tú, si no lo hay, los bebes tú	10	
+anecdota	{player}, confiesa algo vergonzoso te haya pasado recientemente. Si la mayoría del grupo aprueba la anécdota, repartes 4 tragos. Si les parece aburrida, te los bebes tú.	10	
+Lengua	Los que llegan a tocarse la nariz con la lengua reparten 3 tragos	10	
 ESPAÑA	Bebe 3 tragos si creias desde el principio que ESPAÑA iba a ser bicampeona del mundo	10	
+concurso pestañeo	{player}, tú y {randomplayer} hacéis un concurso de aguantar sin pestañear, el primero que pestañee bebe {randomnum;2:4} tragos	8	
+t-rex	{player}, tienes que beber y hacer todo con los brazos pegados al cuerpo como un T-Rex. Si separas los codos, bebes 2 tragos.	8	norma_1
+arzobispo	{player} di "El arzobispo de Constantinopla se quiere desconstantinopolizar" rápido y sin trabarte. Si fallas bebes 4, si lo clavas repartes 4.	8	
+sin dientes	{player} debe hacer reír a {randomplayer} sin enseñar los dientes. Si lo consigue, {randomplayer} bebe 3 tragos. Si no, {player} bebe 3 tragos.	7	
+ultima pelicula	Todo el mundo dice la última película que ha visto, las personas que coincidan con otras beben 1 trago.	7	
+Laburar	{player} manda beber 2 tragos a aquellas personas que creas que tienen menos horas cotizadas que tú	7	
+Aaaaaaa	Bebes tantos tragos como "A" haya en tu nombre	6	
+Eeeeeee	Bebes tantos tragos como "E" haya en tu nombre	6	
+Iiiiiii	Bebes tantos tragos como "I" haya en tu nombre	6	
+Ooooooo	Bebes tantos tragos como "O" haya en tu nombre	6	
+Uuuuuuu	Bebes tantos tragos como "U" haya en tu nombre	6	
+vikingo	{player} eres Haaland. Cuando hagas cuernos con los dedos, el resto debe remar. El último en remar bebe 2 tragos.	5	norma_1
+El arte de performear	Por turnos, decid el nombre de una mujer negra famosa, el que no sepa o repita bebe 3 tragos. Empieza {player}	5	
+Ludopatía chaos?	Aplica a todo el mundo: cada vez que toque beber se puede decir "doble o nada" y jugártelo a un cara o cruz	5	norma_1
+El arte de no performear	Por turnos, decid nombres de hombres con antecedentes de violencia contra sus parejas. El que no sepa o repita bebe. Empieza {player}	5	
+radio amor	{player}, a partir de ahora debes hablar con voz profunda y seductora, como un locutor de radio romántica de las 3 AM. Si usas tu voz normal, bebes 2 tragos.	5	norma_1
+Carmen	Bebes por cada "N", "E", "M", "R", "A", "C" que haya en tu nombre (según sale en tu DNI)	5	
+cascada	Todo el mundo empieza a beber! Hasta que pare *{player}* no podrá parar el jugador de su derecha y así sucesivamente	4	
+Ludopatía extreme?	{player}, cada vez que toque beber (a ti o otras personas) puedes decir "doble o nada" y jugártelo a un cara o cruz	4	norma_1
+El tabaco mata	Todo el mundo: bebe un trago por cada piti/peta que te hayas fumado esta noche	3	

@@ -26,6 +26,8 @@ export const NORMA_BUFFER_CARDS = 3;
 
 export const FLAG_SPECIAL_TRIBIAL = "special_tribial";
 export const FLAG_SPECIAL_SONGSTER = "special_songster";
+/** Only eligible to be drawn when the table has an odd number of players. */
+export const FLAG_SPECIAL_IMPARES = "special_impares";
 
 function parseCards(raw: string): Card[] {
   const lines = raw.split(/\r?\n/).filter((l) => l.length > 0);
@@ -101,9 +103,16 @@ export function glowForWeight(weight: number): "gold" | "silver" | "none" {
   return "none";
 }
 
-/** Weighted random pick, excluding `special_songster` cards unless Songster is enabled. */
-export function pickNextCard(cards: Card[], excludeCard: Card | null, songsterEnabled: boolean): Card {
-  let pool = cards.filter((c) => songsterEnabled || c.flag !== FLAG_SPECIAL_SONGSTER);
+/**
+ * Weighted random pick, excluding `special_songster` cards unless Songster is
+ * enabled and `special_impares` cards unless the table has an odd headcount.
+ */
+export function pickNextCard(cards: Card[], excludeCard: Card | null, songsterEnabled: boolean, oddPlayerCount: boolean): Card {
+  let pool = cards.filter(
+    (c) =>
+      (songsterEnabled || c.flag !== FLAG_SPECIAL_SONGSTER) &&
+      (oddPlayerCount || c.flag !== FLAG_SPECIAL_IMPARES)
+  );
   if (pool.length === 0) pool = cards;
   if (excludeCard && pool.length > 1) {
     const withoutPrev = pool.filter((c) => c !== excludeCard);
@@ -217,6 +226,35 @@ export function substituteCardText(
   });
 
   return { text, playerPicked };
+}
+
+const CONTINUATION_MARKER = "&&";
+
+/**
+ * Splits a card's (already-substituted) text on the first `&&`, if present.
+ * The part after it is shown as a separate follow-up card and doesn't count
+ * as a real card for norma aging.
+ */
+export function splitContinuation(text: string): { main: string; continuation: string | null } {
+  const idx = text.indexOf(CONTINUATION_MARKER);
+  if (idx === -1) return { main: text.trim(), continuation: null };
+  return {
+    main: text.slice(0, idx).trim(),
+    continuation: text.slice(idx + CONTINUATION_MARKER.length).trim(),
+  };
+}
+
+const TIMER_REGEX = /\{timer;(\d+)\}/;
+
+/** Strips a `{timer;X}` token from a card's text, returning the duration (seconds) if present. */
+export function extractTimer(text: string): { text: string; timerSeconds: number | null } {
+  const match = text.match(TIMER_REGEX);
+  if (!match) return { text, timerSeconds: null };
+  const seconds = parseInt(match[1], 10);
+  return {
+    text: text.replace(TIMER_REGEX, "").trim(),
+    timerSeconds: Number.isFinite(seconds) ? seconds : null,
+  };
 }
 
 export interface TextSegment {

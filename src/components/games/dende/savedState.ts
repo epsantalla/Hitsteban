@@ -12,7 +12,7 @@ import { Player } from "./cards";
 export const DENDE_GAME_ID = "dende";
 
 /** Bump when `DendeSavedState` changes shape, to invalidate old saves. */
-export const DENDE_SAVE_VERSION = 2;
+export const DENDE_SAVE_VERSION = 3;
 
 /**
  * A norma card's rule. `roundsTotal` is the full number of rounds it lasts
@@ -34,6 +34,8 @@ export interface CardView {
   text: string;
   weight: number;
   flag: string;
+  /** Seconds for a `{timer;X}` countdown on this card, if it had one. */
+  timerSeconds: number | null;
 }
 
 /** A "SE ACABÓ" screen for an expired norma. */
@@ -42,14 +44,22 @@ export interface ExpiryView {
   text: string;
 }
 
-export type DendeView = CardView | ExpiryView;
+/** The follow-up card from a `&&` split — doesn't count as a card for norma aging. */
+export interface ContinuationView {
+  kind: "continuation";
+  text: string;
+  timerSeconds: number | null;
+}
+
+export type DendeView = CardView | ExpiryView | ContinuationView;
 
 /** The slice of state `DendeGame` owns and reports upward on each checkpoint. */
 export interface DendeRuntimeState {
   activeNormas: ActiveNorma[];
   pity: Record<string, number>;
   currentView: DendeView | null;
-  pendingExpiries: ExpiryView[];
+  /** Queued views (norma expiries, `&&` continuations) to show before drawing the next real card. */
+  pendingViews: DendeView[];
   tracks?: Track[];
   usedTrackIds?: string[];
 }

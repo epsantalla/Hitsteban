@@ -20,8 +20,10 @@ import {
   parseNormaRounds,
   glowForWeight,
   parseBoldSegments,
+  splitContinuation,
+  extractTimer,
 } from "./cards";
-import { ActiveNorma, DendeView, DendeRuntimeState, ExpiryView } from "./savedState";
+import { ActiveNorma, DendeView, DendeRuntimeState } from "./savedState";
 import NamekBackground from "./NamekBackground";
 import TribialCards from "./TribialCards";
 import SongsterCard from "./SongsterCard";
@@ -56,6 +58,52 @@ function ExpiryTextContent({ text }: { text: string }) {
     <div className="font-bold leading-snug text-red-500" style={{ textShadow: `${BASE_SHADOW}, 0 0 20px rgba(239,68,68,0.65)` }}>
       {renderTextSegments(text)}
       <div className="mt-6 text-[1.3em] tracking-widest uppercase">SE ACABÓ</div>
+    </div>
+  );
+}
+
+// A `&&`-split follow-up card: same weight/shadow as a real card, but tinted
+// light purple so it reads as a distinct "part two" rather than a new draw.
+function ContinuationTextContent({ text }: { text: string }) {
+  return (
+    <div className="font-bold leading-snug" style={{ color: "#d2b8e3", textShadow: BASE_SHADOW }}>
+      {renderTextSegments(text)}
+    </div>
+  );
+}
+
+// Same harsh countdown-end sound as Songster Carousel's timer, kept local
+// since Dende is the only other place a countdown needs it.
+const playTimerEndSound = () => {
+  try {
+    const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+    if (!AudioContext) return;
+    const ctx = new AudioContext();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.type = "sawtooth";
+    osc.frequency.setValueAtTime(260, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(65, ctx.currentTime + 0.5);
+
+    gain.gain.setValueAtTime(1.95, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+
+    osc.start();
+    osc.stop(ctx.currentTime + 0.5);
+  } catch (e) {}
+};
+
+function CardTimerDisplay({ seconds }: { seconds: number }) {
+  return (
+    <div
+      className={`text-[4rem] leading-none font-mono font-bold mb-6 transition-colors pointer-events-none ${
+        seconds <= 5 ? "text-red-500 animate-pulse" : "text-[#EAF7EE]"
+      }`}
+    >
+      00:{seconds.toString().padStart(2, "0")}
     </div>
   );
 }
@@ -105,7 +153,7 @@ export default function DendeGame({
   const [playerError, setPlayerError] = useState<string | null>(null);
 
   const [view, setView] = useState<DendeView | null>(initialState?.currentView ?? null);
-  const [pendingExpiries, setPendingExpiries] = useState<ExpiryView[]>(initialState?.pendingExpiries ?? []);
+  const [pendingViews, setPendingViews] = useState<DendeView[]>(initialState?.pendingViews ?? []);
   const [activeNormas, setActiveNormas] = useState<ActiveNorma[]>(initialState?.activeNormas ?? []);
   const [pity, setPity] = useState<Record<string, number>>(initialState?.pity ?? {});
   const [usedTrackIds, setUsedTrackIds] = useState<string[]>(initialState?.usedTrackIds ?? []);
@@ -115,6 +163,16 @@ export default function DendeGame({
   const [isHolding, setIsHolding] = useState(false);
   const holdTimerRef = useRef<NodeJS.Timeout | null>(null);
   const lastCardRef = useRef<Card | null>(null);
+
+  // Debug mode: naming player 1 "DEBUG" walks the deck in file order instead
+  // of the normal weighted random draw, so every card can be previewed.
+  const isDebugMode = players[0]?.name.trim().toUpperCase() === "DEBUG";
+  const [debugIndex, setDebugIndex] = useState(-1);
+
+  // A card's `{timer;X}` countdown. Deliberately not persisted across resume
+  // (mirrors Songster Carousel) — it just resets whenever the view changes.
+  const [timeLeft, setTimeLeft] = useState<number | null>(null);
+  const timerSoundPlayedRef = useRef(false);
 
   const errorMsg = (songsterEnabled ? loadError : null) || playerError;
 
@@ -132,14 +190,21 @@ export default function DendeGame({
   };
 
   function advanceToNextView() {
-    if (pendingExpiries.length > 0) {
-      const [next, ...rest] = pendingExpiries;
-      setPendingExpiries(rest);
+    if (pendingViews.length > 0) {
+      const [next, ...rest] = pendingViews;
+      setPendingViews(rest);
       setView(next);
       return;
     }
 
-    const card = pickNextCard(ALL_CARDS, lastCardRef.current, songsterEnabled);
+    let card: Card;
+    if (isDebugMode) {
+      const nextIndex = (debugIndex + 1) % ALL_CARDS.length;
+      setDebugIndex(nextIndex);
+      card = ALL_CARDS[nextIndex];
+    } else {
+      card = pickNextCard(ALL_CARDS, lastCardRef.current, songsterEnabled, players.length % 2 === 1);
+    }
     lastCardRef.current = card;
 
     const outcome = substituteCardText(card.text, players, pity, LISTS);
@@ -147,11 +212,17 @@ export default function DendeGame({
       setPity(updatePityAfterPlayerPick(players, pity, outcome.playerPicked.id));
     }
 
+    // Split off a `&&` follow-up (if any) before anything else touches the
+    // text — it's shown as its own later card and never counts as a real
+    // card for norma text/aging.
+    const { main, continuation } = splitContinuation(outcome.text);
+    const mainParsed = extractTimer(main);
+
     // Age every active norma by this real card, splitting off any that have
     // now reached their own threshold (a full round + the flat buffer,
     // counted fresh from when each appeared).
     const stillActive: ActiveNorma[] = [];
-    const justExpired: ExpiryView[] = [];
+    const justExpired: DendeView[] = [];
     for (const norma of activeNormas) {
       const aged: ActiveNorma = { ...norma, cardsSeen: norma.cardsSeen + 1 };
       const threshold = normaThreshold(aged, players.length);
@@ -163,12 +234,19 @@ export default function DendeGame({
     }
 
     if (isNormaFlag(card.flag)) {
-      stillActive.push({ text: outcome.text, roundsTotal: parseNormaRounds(card.flag), cardsSeen: 0 });
+      stillActive.push({ text: mainParsed.text, roundsTotal: parseNormaRounds(card.flag), cardsSeen: 0 });
     }
 
+    const nextPending: DendeView[] = [];
+    if (continuation !== null) {
+      const continuationParsed = extractTimer(continuation);
+      nextPending.push({ kind: "continuation", text: continuationParsed.text, timerSeconds: continuationParsed.timerSeconds });
+    }
+    nextPending.push(...justExpired);
+
     setActiveNormas(stillActive);
-    setPendingExpiries(justExpired);
-    setView({ kind: "card", text: outcome.text, weight: card.weight, flag: card.flag });
+    setPendingViews(nextPending);
+    setView({ kind: "card", text: mainParsed.text, weight: card.weight, flag: card.flag, timerSeconds: mainParsed.timerSeconds });
   }
 
   // Draw the very first view once ready (fresh game — resumed games already have `view`).
@@ -184,13 +262,37 @@ export default function DendeGame({
         activeNormas,
         pity,
         currentView: view,
-        pendingExpiries,
+        pendingViews,
         tracks,
         usedTrackIds,
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [view, activeNormas, pity, pendingExpiries, tracks, usedTrackIds, status]);
+  }, [view, activeNormas, pity, pendingViews, tracks, usedTrackIds, status]);
+
+  // Reset the `{timer;X}` countdown whenever the shown view changes.
+  useEffect(() => {
+    if (view && (view.kind === "card" || view.kind === "continuation") && view.timerSeconds !== null) {
+      setTimeLeft(view.timerSeconds);
+      timerSoundPlayedRef.current = false;
+    } else {
+      setTimeLeft(null);
+    }
+  }, [view]);
+
+  // Countdown tick; plays the end sound once when it reaches zero.
+  useEffect(() => {
+    if (timeLeft === null) return;
+    if (timeLeft <= 0) {
+      if (!timerSoundPlayedRef.current) {
+        timerSoundPlayedRef.current = true;
+        playTimerEndSound();
+      }
+      return;
+    }
+    const t = setTimeout(() => setTimeLeft((s) => (s !== null ? s - 1 : null)), 1000);
+    return () => clearTimeout(t);
+  }, [timeLeft]);
 
   const handlePointerDown = (e: React.PointerEvent) => {
     e.preventDefault();
@@ -350,6 +452,15 @@ export default function DendeGame({
         </button>
       </div>
 
+      {isDebugMode && view && (
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-30 flex flex-col items-center pointer-events-none">
+          <span className="text-xs font-bold uppercase tracking-widest text-red-500">Debug</span>
+          <span className="text-[10px] font-mono text-red-400">
+            {debugIndex + 1}/{ALL_CARDS.length}
+          </span>
+        </div>
+      )}
+
       {showNormas && (
         <div
           className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"
@@ -391,21 +502,33 @@ export default function DendeGame({
         </div>
       )}
 
-      <div className="flex-1 flex items-center justify-center px-8 pt-24 pb-32 w-full pointer-events-none">
+      <div className="flex-1 flex flex-col items-center justify-center px-8 pt-24 pb-32 w-full pointer-events-none">
+        {(view?.kind === "card" || view?.kind === "continuation") && timeLeft !== null && (
+          <CardTimerDisplay seconds={timeLeft} />
+        )}
         {view?.kind === "card" && (
           <FitBox
             max={60}
             min={20}
-            className={`w-full h-full transition-transform duration-500 ${isHolding ? "scale-95" : "scale-100"}`}
+            className={`w-full flex-1 min-h-0 transition-transform duration-500 ${isHolding ? "scale-95" : "scale-100"}`}
           >
             <CardTextContent text={view.text} weight={view.weight} />
+          </FitBox>
+        )}
+        {view?.kind === "continuation" && (
+          <FitBox
+            max={60}
+            min={20}
+            className={`w-full flex-1 min-h-0 transition-transform duration-500 ${isHolding ? "scale-95" : "scale-100"}`}
+          >
+            <ContinuationTextContent text={view.text} />
           </FitBox>
         )}
         {view?.kind === "expiry" && (
           <FitBox
             max={60}
             min={20}
-            className={`w-full h-full transition-transform duration-500 ${isHolding ? "scale-95" : "scale-100"}`}
+            className={`w-full flex-1 min-h-0 transition-transform duration-500 ${isHolding ? "scale-95" : "scale-100"}`}
           >
             <ExpiryTextContent text={view.text} />
           </FitBox>
