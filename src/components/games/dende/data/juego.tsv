@@ -38,21 +38,22 @@ norma_sino	{player} no puedes decir ni SI ni NO, si lo haces, bebes 1 trago	15	n
 pregunta	{player} eres el maestro de las preguntas. Si haces una pregunta y alguien te responde, esa persona bebe 1 trago.	15	norma_2
 cancioncilla	{player} debe cantar todo lo que diga. Si habla normal, bebe 3 tragos.	15	norma_1
 medusa	Todos agachan la cabeza. A la de 3, todos levantan la vista y miran a alguien. Si dos personas se miran a los ojos, beben {randomnum;1:4} tragos.	15	
-pares o nones	{player} juega a pares o nones con {randomplayer}. El perdedor bebe 2 tragos.	15	
-Tattoos sí	Todos los que tengan algún tattoo beben 2 tragos	15	
-Tattoos no	Todos los que no tengan ningún tattoo beben 2 tragos	15	
+pares o nones	{player} juega a pares o nones con {randomplayer}. El perdedor bebe 2 tragos.	11	
+Tattoos sí	Todos los que tengan algún tattoo beben 2 tragos	7	
+Tattoos no	Todos los que no tengan ningún tattoo beben 2 tragos	7	
 Ludopatía?	{player}, cada vez que te toque beber puedes decir "doble o nada" y jugártelo a un cara o cruz	15	norma_1
 conexion	{player} y {randomplayer} cuentan hasta 3 y dicen una palabra a la vez. Si no dicen la misma, beben 3 tragos cada uno. Si coinciden, reparten 10 tragos.	15	
 palabra prohibida	{player} elige una palabra. Quien la diga bebe 1 trago.	15	norma_1
 majestad	A partir de ahora {player} se llamará "Su Majestad". Quien se dirija a ti de otra forma, bebe 2 tragos.	15	norma_1
 Anfitrion	El anfitrión de hoy bebe 4 tragos, si no lo hay, bebe {player}	15	
-Lagunas	{player} si alguna vez has tenido lagunas por culpa del alcohol bebe 4 tragos, si no, repártelos	15	
+alguna vez	{player} si alguna vez has {list;algunavez} bebe {randomnum;3:6} tragos, si no, repártelos	60	
 Amor	{player} Dale 4 tragos al jugador que más quieras	15	
 Accesorio	{player} di un accesorio, quienes lo lleven beben 2 tragos	15	
 Pregunta	{player} haz una pregunta. La primera persona que responde reparte 2 tragos	15	
-Vasos vacíos 	{player} bebe tantos tragos como vasos NO vacíos haya en la mesa	15	
-Sexy boy	Para las chicas, bebed tantos tragos como tíos buenos haya en la partida	15	
-Sexy girl	Para los chicos, bebed tantos tragos como tíos buenos haya en la partida	15	
+Vasos vacíos 	{player} bebe tantos tragos como vasos NO vacíos haya en la mesa	12	
+Sexy boy	Para las chicas, bebed tantos tragos como tíos buenos haya en la partida	11	
+Sexy girl	Para los chicos, bebed tantos tragos como tías buenas haya en la partida	11	
+gay boy	Para los chicos, bebed tantos tragos como tíos buenos haya en la partida	2	
 spicyness	{player}, acércate y susúrrale algo sugerente o sucio al oído a {randomplayer}. Si se ríe, sonroja o aparta, bebe 3 tragos. Si no reacciona, te los bebes tú.	15	
 telenovela	{player} y {randomplayer}, acercaos dramáticamente como si fuerais a besaros en el clímax de una telenovela, pero en el último segundo daos la mano muy formalmente. Si alguno se ríe en el proceso, bebe 4 tragos.	15	
 Who?	{player} dale 2 tragos a la persona que menos conozcas	15	

@@ -96,11 +96,16 @@ const playTimerEndSound = () => {
   } catch (e) {}
 };
 
+// Standalone badge (not sharing flex space with the card's own auto-sizing
+// text) so it's never squeezed out — pinned top-center, above everything.
 function CardTimerDisplay({ seconds }: { seconds: number }) {
+  const low = seconds <= 5;
   return (
     <div
-      className={`text-[4rem] leading-none font-mono font-bold mb-6 transition-colors pointer-events-none ${
-        seconds <= 5 ? "text-red-500 animate-pulse" : "text-[#EAF7EE]"
+      className={`absolute top-16 left-1/2 -translate-x-1/2 z-30 pointer-events-none px-5 py-2 rounded-full border font-mono font-bold text-3xl leading-none tabular-nums shadow-lg transition-colors ${
+        low
+          ? "text-red-400 border-red-500/70 bg-red-950/70 animate-pulse shadow-red-900/50"
+          : "text-[#EAF7EE] border-[#1B4433] bg-[#04120D]/80"
       }`}
     >
       00:{seconds.toString().padStart(2, "0")}
@@ -502,15 +507,16 @@ export default function DendeGame({
         </div>
       )}
 
-      <div className="flex-1 flex flex-col items-center justify-center px-8 pt-24 pb-32 w-full pointer-events-none">
-        {(view?.kind === "card" || view?.kind === "continuation") && timeLeft !== null && (
-          <CardTimerDisplay seconds={timeLeft} />
-        )}
+      {(view?.kind === "card" || view?.kind === "continuation") && timeLeft !== null && (
+        <CardTimerDisplay seconds={timeLeft} />
+      )}
+
+      <div className="flex-1 flex items-center justify-center px-8 pt-24 pb-32 w-full pointer-events-none">
         {view?.kind === "card" && (
           <FitBox
             max={60}
             min={20}
-            className={`w-full flex-1 min-h-0 transition-transform duration-500 ${isHolding ? "scale-95" : "scale-100"}`}
+            className={`w-full h-full transition-transform duration-500 ${isHolding ? "scale-95" : "scale-100"}`}
           >
             <CardTextContent text={view.text} weight={view.weight} />
           </FitBox>
@@ -519,7 +525,7 @@ export default function DendeGame({
           <FitBox
             max={60}
             min={20}
-            className={`w-full flex-1 min-h-0 transition-transform duration-500 ${isHolding ? "scale-95" : "scale-100"}`}
+            className={`w-full h-full transition-transform duration-500 ${isHolding ? "scale-95" : "scale-100"}`}
           >
             <ContinuationTextContent text={view.text} />
           </FitBox>
@@ -528,7 +534,7 @@ export default function DendeGame({
           <FitBox
             max={60}
             min={20}
-            className={`w-full flex-1 min-h-0 transition-transform duration-500 ${isHolding ? "scale-95" : "scale-100"}`}
+            className={`w-full h-full transition-transform duration-500 ${isHolding ? "scale-95" : "scale-100"}`}
           >
             <ExpiryTextContent text={view.text} />
           </FitBox>
