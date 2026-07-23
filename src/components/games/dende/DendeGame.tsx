@@ -29,7 +29,7 @@ import TribialCards from "./TribialCards";
 import SongsterCard from "./SongsterCard";
 
 // Tint for a substituted {player}/{randomplayer}/{randomplayer2} name.
-const PLAYER_NAME_COLOR = "#def3fa";
+const PLAYER_NAME_COLOR = "#b9ebfa";
 
 function renderTextSegments(text: string) {
   return parseBoldSegments(text).map((seg, i) => {
