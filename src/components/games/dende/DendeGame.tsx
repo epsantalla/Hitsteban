@@ -28,10 +28,22 @@ import NamekBackground from "./NamekBackground";
 import TribialCards from "./TribialCards";
 import SongsterCard from "./SongsterCard";
 
+// Tint for a substituted {player}/{randomplayer}/{randomplayer2} name.
+const PLAYER_NAME_COLOR = "#def3fa";
+
 function renderTextSegments(text: string) {
-  return parseBoldSegments(text).map((seg, i) =>
-    seg.bold ? <strong key={i}>{seg.text}</strong> : <span key={i}>{seg.text}</span>
-  );
+  return parseBoldSegments(text).map((seg, i) => {
+    const style = seg.player ? { color: PLAYER_NAME_COLOR } : undefined;
+    return seg.bold ? (
+      <strong key={i} style={style}>
+        {seg.text}
+      </strong>
+    ) : (
+      <span key={i} style={style}>
+        {seg.text}
+      </span>
+    );
+  });
 }
 
 // A base shadow always applied, so text reads clearly against the busy planet

@@ -173,17 +173,30 @@ export function pickDistinctRandomPlayers(players: Player[], excludeIds: string[
 }
 
 export interface SubstitutionOutcome {
-  /** Fully substituted text, `*bold*` markers still present. */
+  /** Fully substituted text, `*bold*` markers and player-name markers still present. */
   text: string;
   /** The player chosen for `{player}` in this text, if any (for pity bookkeeping). */
   playerPicked?: Player;
 }
 
 /**
+ * Invisible delimiter wrapped around a substituted player name so the
+ * renderer can tint it later, even after further substitutions/bold markup
+ * are applied around it. Uses a control character so it can never collide
+ * with hand-authored TSV card text.
+ */
+const PLAYER_MARK = String.fromCharCode(1);
+
+function markPlayerName(name: string): string {
+  return `${PLAYER_MARK}${name}${PLAYER_MARK}`;
+}
+
+/**
  * Apply all Dende template substitutions to a raw card's text:
  * `{player}` (pity-weighted), `{randomplayer}`/`{randomplayer2}` (uniform,
  * distinct from `{player}` and each other), `{randomnum;x:y}`, and
- * `{list;column}`. Bold `*...*` markers are left in place for the renderer.
+ * `{list;column}`. Bold `*...*` markers are left in place for the renderer;
+ * substituted player names are wrapped in `PLAYER_MARK` for the same reason.
  */
 export function substituteCardText(
   rawText: string,
@@ -196,7 +209,7 @@ export function substituteCardText(
 
   if (text.includes("{player}")) {
     playerPicked = pickPlayerForPity(players, pity);
-    text = text.split("{player}").join(playerPicked.name);
+    text = text.split("{player}").join(markPlayerName(playerPicked.name));
   }
 
   const usedIds = playerPicked ? [playerPicked.id] : [];
@@ -208,11 +221,11 @@ export function substituteCardText(
     let idx = 0;
     if (needsRandomplayer) {
       const p = picks[idx++];
-      if (p) text = text.split("{randomplayer}").join(p.name);
+      if (p) text = text.split("{randomplayer}").join(markPlayerName(p.name));
     }
     if (needsRandomplayer2) {
       const p = picks[idx++];
-      if (p) text = text.split("{randomplayer2}").join(p.name);
+      if (p) text = text.split("{randomplayer2}").join(markPlayerName(p.name));
     }
   }
 
@@ -260,9 +273,22 @@ export function extractTimer(text: string): { text: string; timerSeconds: number
 export interface TextSegment {
   text: string;
   bold: boolean;
+  /** True for a substituted `{player}`/`{randomplayer}`/`{randomplayer2}` name (see `PLAYER_MARK`). */
+  player: boolean;
 }
 
-/** Split `*bold*`-marked text into plain/bold segments for rendering. */
+/** Splits a run of text on `PLAYER_MARK` pairs into plain/player-name segments, sharing `bold`. */
+function splitPlayerMarks(text: string, bold: boolean): TextSegment[] {
+  const segments: TextSegment[] = [];
+  const parts = text.split(PLAYER_MARK);
+  parts.forEach((part, i) => {
+    if (part.length === 0) return;
+    segments.push({ text: part, bold, player: i % 2 === 1 });
+  });
+  return segments;
+}
+
+/** Split `*bold*`-marked (and player-name-marked) text into segments for rendering. */
 export function parseBoldSegments(text: string): TextSegment[] {
   const segments: TextSegment[] = [];
   const regex = /\*([^*]+)\*/g;
@@ -270,13 +296,13 @@ export function parseBoldSegments(text: string): TextSegment[] {
   let match: RegExpExecArray | null;
   while ((match = regex.exec(text)) !== null) {
     if (match.index > lastIndex) {
-      segments.push({ text: text.slice(lastIndex, match.index), bold: false });
+      segments.push(...splitPlayerMarks(text.slice(lastIndex, match.index), false));
     }
-    segments.push({ text: match[1], bold: true });
+    segments.push(...splitPlayerMarks(match[1], true));
     lastIndex = regex.lastIndex;
   }
   if (lastIndex < text.length) {
-    segments.push({ text: text.slice(lastIndex), bold: false });
+    segments.push(...splitPlayerMarks(text.slice(lastIndex), false));
   }
   return segments;
 }
